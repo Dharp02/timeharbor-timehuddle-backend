@@ -1,0 +1,8 @@
+{
+  "name": "timeharbor-timehuddle-backend",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ]
+}
