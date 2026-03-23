@@ -5,15 +5,18 @@ import swagger from "@fastify/swagger";
 import swaggerUi from "@fastify/swagger-ui";
 import { auth } from "./lib/auth.js";
 import { connectDB } from "./lib/db.js";
+import { ensureIndexes } from "./lib/ensure-indexes.js";
 import { healthRoutes } from "./routes/health.js";
 import { timeharborRoutes } from "./routes/timeharbor/index.js";
 import { timehuddleRoutes } from "./routes/timehuddle/index.js";
 import { appContext } from "./middleware/app-context.js";
+import { autoCloseOrphanedSessions } from "./jobs/auto-close-sessions.js";
 
-const app = Fastify({ logger: true });
+const app = Fastify({ logger: true, ignoreTrailingSlash: true });
 
 async function bootstrap() {
   await connectDB();
+  await ensureIndexes();
 
   // Swagger — must be registered before routes
   await app.register(swagger, {
@@ -322,6 +325,9 @@ async function bootstrap() {
   // App-specific routes
   await app.register(timeharborRoutes, { prefix: "/api/timeharbor" });
   await app.register(timehuddleRoutes, { prefix: "/api/timehuddle" });
+
+  // Auto-close orphaned sessions every hour
+  setInterval(autoCloseOrphanedSessions, 60 * 60 * 1000);
 
   const port = Number(process.env.PORT) || 3001;
   await app.listen({ port, host: "0.0.0.0" });
