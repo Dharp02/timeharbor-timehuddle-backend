@@ -27,6 +27,7 @@ async function bootstrap() {
         version: "1.0.0",
       },
       servers: [
+        { url: "https://timehubbackend.os.mieweb.org", description: "Production" },
         { url: `http://localhost:${process.env.PORT || 3001}`, description: "Local dev" },
       ],
       tags: [
