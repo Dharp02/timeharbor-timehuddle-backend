@@ -80,6 +80,12 @@ async function bootstrap() {
       }
     }
 
+    // Capacitor's native HTTP plugin may not send an Origin header.
+    // Better Auth rejects requests with missing origin, so set a fallback.
+    if (!headers.has("origin") || headers.get("origin") === "null") {
+      headers.set("origin", "capacitor://localhost");
+    }
+
     const hasBody = req.method !== "GET" && req.method !== "HEAD";
     const webRequest = new Request(url, {
       method: req.method,
@@ -269,12 +275,12 @@ async function bootstrap() {
     },
   }, betterAuthHandler);
 
-  app.get("/api/auth/sign-in/social", {
+  app.post("/api/auth/sign-in/social", {
     schema: {
       tags: ["Auth"],
       summary: "Initiate social OAuth sign-in",
-      description: "Redirects to the OAuth provider (Google or GitHub). The provider redirects back to /api/auth/callback/{provider}.",
-      querystring: {
+      description: "Returns the OAuth provider URL to redirect to. The provider redirects back to /api/auth/callback/{provider}.",
+      body: {
         type: "object",
         required: ["provider"],
         properties: {
@@ -283,7 +289,7 @@ async function bootstrap() {
         },
       },
       response: {
-        302: { type: "null", description: "Redirect to OAuth provider" },
+        200: { type: "object", properties: { url: { type: "string" }, redirect: { type: "boolean" } } },
       },
     },
   }, betterAuthHandler);
