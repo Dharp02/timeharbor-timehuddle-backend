@@ -1,6 +1,12 @@
 import { ObjectId } from "mongodb";
 import type { TicketSegment, Break, TicketTime } from "@timeharbor/time-engine";
 
+export interface SessionAttachment {
+  name: string;
+  type: string;
+  dataUrl: string;
+}
+
 export interface WorkSession {
   _id: ObjectId;
   clientSessionId: string;
@@ -15,6 +21,8 @@ export interface WorkSession {
   netWorkMs: number;
   ticketBreakdown: TicketTime[];
   comment?: string;
+  links?: string[];
+  attachments?: SessionAttachment[];
   autoClosedAt?: number;
   sourceApp: "timeharbor";
   _rev: number;

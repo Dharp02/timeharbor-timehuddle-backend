@@ -62,6 +62,8 @@ export const timeController = {
         netWorkMs: number;
         ticketBreakdown: WorkSession["ticketBreakdown"];
         comment?: string;
+        links?: string[];
+        attachments?: Array<{ name: string; type: string; dataUrl: string }>;
         sourceApp?: string;
         _rev: number;
       }>;
@@ -95,6 +97,8 @@ export const timeController = {
         netWorkMs: verified.netWorkMs,
         ticketBreakdown: verified.ticketBreakdown,
         comment: incoming.comment,
+        links: incoming.links,
+        attachments: incoming.attachments,
         sourceApp: "timeharbor",
         _rev: incoming._rev,
         createdAt: existing?.createdAt ?? now,
