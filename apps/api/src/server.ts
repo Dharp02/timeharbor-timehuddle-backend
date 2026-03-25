@@ -1,6 +1,11 @@
 import "dotenv/config";
+import { fileURLToPath } from "url";
+import path from "path";
+import fs from "fs";
 import Fastify from "fastify";
 import cors from "@fastify/cors";
+import multipart from "@fastify/multipart";
+import fastifyStatic from "@fastify/static";
 import swagger from "@fastify/swagger";
 import swaggerUi from "@fastify/swagger-ui";
 import { auth } from "./lib/auth.js";
@@ -17,6 +22,21 @@ const app = Fastify({ logger: true, ignoreTrailingSlash: true });
 async function bootstrap() {
   await connectDB();
   await ensureIndexes();
+
+  // Ensure uploads directory exists
+  const __dirname = path.dirname(fileURLToPath(import.meta.url));
+  const uploadsDir = path.resolve(__dirname, "..", "uploads", "avatars");
+  fs.mkdirSync(uploadsDir, { recursive: true });
+
+  // Multipart file uploads (5MB limit)
+  await app.register(multipart, { limits: { fileSize: 5 * 1024 * 1024 } });
+
+  // Serve uploaded files at /uploads/*
+  await app.register(fastifyStatic, {
+    root: path.resolve(__dirname, "..", "uploads"),
+    prefix: "/uploads/",
+    decorateReply: false,
+  });
 
   // Swagger — must be registered before routes
   await app.register(swagger, {

@@ -116,6 +116,34 @@ export async function timeharborRoutes(app: FastifyInstance) {
     },
   }, profileController.updateProfile);
 
+  app.post("/me/avatar", {
+    preHandler: [requireAuth],
+    schema: {
+      tags: ["TimeHarbor"],
+      summary: "Upload profile avatar",
+      security: [{ cookieAuth: [] }],
+      consumes: ["multipart/form-data"],
+      response: {
+        200: { type: "object", properties: { avatarUrl: { type: "string" } } },
+        400: { type: "object", properties: { error: { type: "string" } } },
+        ...unauthorizedResponse,
+      },
+    },
+  }, profileController.uploadAvatar);
+
+  app.delete("/me/avatar", {
+    preHandler: [requireAuth],
+    schema: {
+      tags: ["TimeHarbor"],
+      summary: "Delete profile avatar",
+      security: [{ cookieAuth: [] }],
+      response: {
+        200: { type: "object", properties: { ok: { type: "boolean" } } },
+        ...unauthorizedResponse,
+      },
+    },
+  }, profileController.deleteAvatar);
+
   app.post("/me/register-device", {
     preHandler: [requireAuth],
     schema: {
