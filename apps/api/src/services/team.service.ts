@@ -149,6 +149,11 @@ export class TeamService {
     const member = await membersCollection().findOne({ userId, teamId });
     return member?.role === "Leader";
   }
+
+  async isMember(teamId: string, userId: string): Promise<boolean> {
+    const member = await membersCollection().findOne({ userId, teamId });
+    return member !== null;
+  }
 }
 
 export const teamService = new TeamService();

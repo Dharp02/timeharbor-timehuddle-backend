@@ -9,6 +9,7 @@ import { connectDB } from "./lib/db.js";
 import { healthRoutes } from "./routes/health.js";
 import { timeharborRoutes } from "./routes/timeharbor/index.js";
 import { timehuddleRoutes } from "./routes/timehuddle/index.js";
+import { bridgeRoutes } from "./routes/bridge/index.js";
 
 const app = Fastify({ logger: true });
 
@@ -31,6 +32,7 @@ async function bootstrap() {
         { name: "Auth", description: "Better Auth endpoints (sign-up, sign-in, sign-out, session)" },
         { name: "TimeHarbor", description: "TimeHarbor app endpoints" },
         { name: "TimeHuddle", description: "TimeHuddle app endpoints" },
+        { name: "Bridge", description: "Cross-app bridge endpoints (TimeJournal ↔ TimeHuddle)" },
       ],
       components: {
         securitySchemes: {
@@ -53,7 +55,7 @@ async function bootstrap() {
       ? process.env.TRUSTED_ORIGINS.split(",")
       : [],
     credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
   });
 
   // Better Auth handles all /api/auth/* routes
@@ -69,6 +71,9 @@ async function bootstrap() {
   // App-specific routes
   await app.register(timeharborRoutes, { prefix: "/api/timeharbor" });
   await app.register(timehuddleRoutes, { prefix: "/api/timehuddle" });
+
+  // Cross-app bridge routes (shared by both TimeJournal and TimeHuddle)
+  await app.register(bridgeRoutes, { prefix: "/api/bridge" });
 
   const port = Number(process.env.PORT) || 3001;
   await app.listen({ port, host: "0.0.0.0" });
