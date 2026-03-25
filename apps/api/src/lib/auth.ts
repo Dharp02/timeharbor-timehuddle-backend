@@ -31,16 +31,12 @@ export const auth = betterAuth({
 
   secret: process.env.BETTER_AUTH_SECRET!,
 
-  // Dynamic baseURL: better-auth derives the base URL from the request's
-  // x-forwarded-host / x-forwarded-proto headers, validated against allowedHosts.
-  // This ensures the OAuth redirect_uri matches the origin the user accesses from
-  // (localhost, LAN IP, or production domain) without hardcoding a single URL.
-  baseURL: {
-    allowedHosts: process.env.ALLOWED_HOSTS
-      ? process.env.ALLOWED_HOSTS.split(",")
-      : ["localhost:*", "10.0.0.8:*"],
-    fallback: process.env.BETTER_AUTH_URL || "http://localhost:8080",
-  },
+  // Static baseURL — must always be the FRONTEND domain so that:
+  //   1. OAuth redirect_uri points to the frontend (cookies stay same-origin)
+  //   2. State cookies set during sign-in are on the same domain as the callback
+  // In production: BETTER_AUTH_URL=https://timeharborappuat.os.mieweb.org
+  // Locally: BETTER_AUTH_URL=http://localhost:8080 (the proxy)
+  baseURL: process.env.BETTER_AUTH_URL || "http://localhost:8080",
 
   trustedOrigins: process.env.TRUSTED_ORIGINS
     ? process.env.TRUSTED_ORIGINS.split(",")
