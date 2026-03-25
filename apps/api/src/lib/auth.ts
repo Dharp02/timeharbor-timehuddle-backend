@@ -30,7 +30,17 @@ export const auth = betterAuth({
   },
 
   secret: process.env.BETTER_AUTH_SECRET!,
-  baseURL: process.env.BETTER_AUTH_URL!,
+
+  // Dynamic baseURL: better-auth derives the base URL from the request's
+  // x-forwarded-host / x-forwarded-proto headers, validated against allowedHosts.
+  // This ensures the OAuth redirect_uri matches the origin the user accesses from
+  // (localhost, LAN IP, or production domain) without hardcoding a single URL.
+  baseURL: {
+    allowedHosts: process.env.ALLOWED_HOSTS
+      ? process.env.ALLOWED_HOSTS.split(",")
+      : ["localhost:*", "10.0.0.8:*"],
+    fallback: process.env.BETTER_AUTH_URL || "http://localhost:8080",
+  },
 
   trustedOrigins: process.env.TRUSTED_ORIGINS
     ? process.env.TRUSTED_ORIGINS.split(",")
@@ -42,6 +52,15 @@ export const auth = betterAuth({
     cookieCache: {
       enabled: true,
       maxAge: 60 * 5,
+    },
+  },
+
+  advanced: {
+    useSecureCookies: process.env.NODE_ENV === "production",
+    defaultCookieAttributes: {
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+      secure: process.env.NODE_ENV === "production",
+      ...(process.env.COOKIE_DOMAIN ? { domain: process.env.COOKIE_DOMAIN } : {}),
     },
   },
 });

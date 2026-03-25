@@ -68,7 +68,9 @@ async function bootstrap() {
   // auth.handler directly, avoiding the body-stream issue that occurs
   // when using toNodeHandler (Fastify already consumes the body).
   async function betterAuthHandler(req: any, reply: any) {
-    const url = `${process.env.BETTER_AUTH_URL || "http://localhost:3001"}${req.url}`;
+    // Use the request URL as-is — better-auth's dynamic baseURL config
+    // reads x-forwarded-host/proto headers to derive the correct origin.
+    const url = `${process.env.BETTER_AUTH_URL || `http://localhost:${process.env.PORT || 3001}`}${req.url}`;
     const headers = new Headers();
     for (const [key, value] of Object.entries(req.headers as Record<string, string | string[] | undefined>)) {
       if (value !== undefined) {
