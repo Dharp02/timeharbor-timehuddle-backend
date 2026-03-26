@@ -7,6 +7,7 @@ import { timeController } from "../../controllers/time.controller.js";
 import { noteController } from "../../controllers/note.controller.js";
 import { projectController } from "../../controllers/project.controller.js";
 import { activityController } from "../../controllers/activity.controller.js";
+import { operationLogController } from "../../controllers/operation-log.controller.js";
 
 const unauthorizedResponse = {
   401: {
@@ -524,4 +525,75 @@ export async function timeharborRoutes(app: FastifyInstance) {
       },
     },
   }, activityController.pullActivities);
+
+  // ── Operation Log Sync ────────────────────────────────────────────
+
+  app.post("/sync/operations/push", {
+    preHandler: [requireAuth],
+    schema: {
+      tags: ["TimeHarbor"],
+      summary: "Push dirty operation logs from client",
+      security: [{ cookieAuth: [] }],
+      body: {
+        type: "object",
+        required: ["logs"],
+        properties: {
+          logs: { type: "array", items: { type: "object" } },
+        },
+      },
+      response: {
+        200: {
+          type: "object",
+          properties: {
+            accepted: { type: "number" },
+            serverIds: { type: "object", additionalProperties: { type: "string" } },
+          },
+        },
+        ...unauthorizedResponse,
+      },
+    },
+  }, operationLogController.pushOperationLogs);
+
+  app.post("/sync/operations/pull", {
+    preHandler: [requireAuth],
+    schema: {
+      tags: ["TimeHarbor"],
+      summary: "Pull operation logs updated since lastPulledAt",
+      security: [{ cookieAuth: [] }],
+      body: {
+        type: "object",
+        properties: {
+          lastPulledAt: { type: ["string", "null"], format: "date-time" },
+        },
+      },
+      response: {
+        200: {
+          type: "object",
+          properties: {
+            logs: { type: "array", items: { type: "object", additionalProperties: true } },
+            serverTime: { type: "string", format: "date-time" },
+          },
+        },
+        ...unauthorizedResponse,
+      },
+    },
+  }, operationLogController.pullOperationLogs);
+
+  app.delete("/sync/operations/clear", {
+    preHandler: [requireAuth],
+    schema: {
+      tags: ["TimeHarbor"],
+      summary: "Delete all operation logs for the current user",
+      security: [{ cookieAuth: [] }],
+      response: {
+        200: {
+          type: "object",
+          properties: {
+            deleted: { type: "number" },
+          },
+        },
+        ...unauthorizedResponse,
+      },
+    },
+  }, operationLogController.clearOperationLogs);
 }

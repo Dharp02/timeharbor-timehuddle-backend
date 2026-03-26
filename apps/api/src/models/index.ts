@@ -6,6 +6,7 @@ import type { WorkSession } from "./work-session.model.js";
 import type { UserDailyStat } from "./user-daily-stat.model.js";
 import type { Note } from "./note.model.js";
 import type { Project } from "./project.model.js";
+import type { OperationLog } from "./operation-log.model.js";
 
 // Collection accessor — use this everywhere instead of getDB().collection("users")
 export function usersCollection() {
@@ -34,4 +35,8 @@ export function notesCollection() {
 
 export function projectsCollection() {
   return getDB().collection<Project>("projects");
+}
+
+export function operationLogsCollection() {
+  return getDB().collection<OperationLog>("operationLogs");
 }
