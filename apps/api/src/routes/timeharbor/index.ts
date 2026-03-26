@@ -4,6 +4,9 @@ import { userController } from "../../controllers/user.controller.js";
 import { profileController } from "../../controllers/profile.controller.js";
 import { ticketController } from "../../controllers/ticket.controller.js";
 import { timeController } from "../../controllers/time.controller.js";
+import { noteController } from "../../controllers/note.controller.js";
+import { projectController } from "../../controllers/project.controller.js";
+import { activityController } from "../../controllers/activity.controller.js";
 
 const unauthorizedResponse = {
   401: {
@@ -363,4 +366,162 @@ export async function timeharborRoutes(app: FastifyInstance) {
       },
     },
   }, timeController.pullSessions);
+
+  // ── Note Sync ──────────────────────────────────────────────────────
+
+  app.post("/sync/notes/push", {
+    preHandler: [requireAuth],
+    schema: {
+      tags: ["TimeHarbor"],
+      summary: "Push dirty notes from client",
+      security: [{ cookieAuth: [] }],
+      body: {
+        type: "object",
+        required: ["notes"],
+        properties: {
+          notes: { type: "array", items: { type: "object" } },
+        },
+      },
+      response: {
+        200: {
+          type: "object",
+          properties: {
+            accepted: { type: "number" },
+            serverIds: { type: "object", additionalProperties: { type: "string" } },
+          },
+        },
+        ...unauthorizedResponse,
+      },
+    },
+  }, noteController.pushNotes);
+
+  app.post("/sync/notes/pull", {
+    preHandler: [requireAuth],
+    schema: {
+      tags: ["TimeHarbor"],
+      summary: "Pull notes updated since lastPulledAt",
+      security: [{ cookieAuth: [] }],
+      body: {
+        type: "object",
+        properties: {
+          lastPulledAt: { type: ["string", "null"], format: "date-time" },
+        },
+      },
+      response: {
+        200: {
+          type: "object",
+          properties: {
+            notes: { type: "array", items: { type: "object", additionalProperties: true } },
+            serverTime: { type: "string", format: "date-time" },
+          },
+        },
+        ...unauthorizedResponse,
+      },
+    },
+  }, noteController.pullNotes);
+
+  // ── Project Sync ──────────────────────────────────────────────────
+
+  app.post("/sync/projects/push", {
+    preHandler: [requireAuth],
+    schema: {
+      tags: ["TimeHarbor"],
+      summary: "Push dirty projects from client",
+      security: [{ cookieAuth: [] }],
+      body: {
+        type: "object",
+        required: ["projects"],
+        properties: {
+          projects: { type: "array", items: { type: "object" } },
+        },
+      },
+      response: {
+        200: {
+          type: "object",
+          properties: {
+            accepted: { type: "number" },
+            serverIds: { type: "object", additionalProperties: { type: "string" } },
+          },
+        },
+        ...unauthorizedResponse,
+      },
+    },
+  }, projectController.pushProjects);
+
+  app.post("/sync/projects/pull", {
+    preHandler: [requireAuth],
+    schema: {
+      tags: ["TimeHarbor"],
+      summary: "Pull projects updated since lastPulledAt",
+      security: [{ cookieAuth: [] }],
+      body: {
+        type: "object",
+        properties: {
+          lastPulledAt: { type: ["string", "null"], format: "date-time" },
+        },
+      },
+      response: {
+        200: {
+          type: "object",
+          properties: {
+            projects: { type: "array", items: { type: "object", additionalProperties: true } },
+            serverTime: { type: "string", format: "date-time" },
+          },
+        },
+        ...unauthorizedResponse,
+      },
+    },
+  }, projectController.pullProjects);
+
+  // ── Activity Sync ─────────────────────────────────────────────────
+
+  app.post("/sync/activity/push", {
+    preHandler: [requireAuth],
+    schema: {
+      tags: ["TimeHarbor"],
+      summary: "Push dirty activity logs from client",
+      security: [{ cookieAuth: [] }],
+      body: {
+        type: "object",
+        required: ["activities"],
+        properties: {
+          activities: { type: "array", items: { type: "object" } },
+        },
+      },
+      response: {
+        200: {
+          type: "object",
+          properties: {
+            accepted: { type: "number" },
+          },
+        },
+        ...unauthorizedResponse,
+      },
+    },
+  }, activityController.pushActivities);
+
+  app.post("/sync/activity/pull", {
+    preHandler: [requireAuth],
+    schema: {
+      tags: ["TimeHarbor"],
+      summary: "Pull activity logs updated since lastPulledAt",
+      security: [{ cookieAuth: [] }],
+      body: {
+        type: "object",
+        properties: {
+          lastPulledAt: { type: ["string", "null"], format: "date-time" },
+        },
+      },
+      response: {
+        200: {
+          type: "object",
+          properties: {
+            activities: { type: "array", items: { type: "object", additionalProperties: true } },
+            serverTime: { type: "string", format: "date-time" },
+          },
+        },
+        ...unauthorizedResponse,
+      },
+    },
+  }, activityController.pullActivities);
 }
