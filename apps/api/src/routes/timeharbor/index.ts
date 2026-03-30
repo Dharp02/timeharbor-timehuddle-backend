@@ -284,7 +284,13 @@ export async function timeharborRoutes(app: FastifyInstance) {
         },
       },
       response: {
-        200: { type: "object", properties: { accepted: { type: "number" } } },
+        200: {
+          type: "object",
+          properties: {
+            accepted: { type: "number" },
+            serverIds: { type: "object", additionalProperties: { type: "string" } },
+          },
+        },
         ...unauthorizedResponse,
       },
     },

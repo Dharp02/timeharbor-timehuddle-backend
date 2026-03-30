@@ -139,8 +139,10 @@ export const ticketController = {
     const userId = req.user!.id;
     const now = new Date();
     let accepted = 0;
+    const serverIds: Record<string, string> = {};
     const body = req.body as {
       tickets: Array<{
+        clientId: string;
         _serverId?: string;
         title: string;
         description?: string;
@@ -209,6 +211,7 @@ export const ticketController = {
         }
 
         await ticketsCollection().updateOne({ _id: oid }, update);
+        serverIds[incoming.clientId] = incoming._serverId;
         accepted++;
       } else {
         // Insert new
@@ -228,12 +231,13 @@ export const ticketController = {
           createdAt: now,
           updatedAt: now,
         };
-        await ticketsCollection().insertOne(doc as Ticket);
+        const result = await ticketsCollection().insertOne(doc as Ticket);
+        serverIds[incoming.clientId] = result.insertedId.toString();
         accepted++;
       }
     }
 
-    reply.send({ accepted });
+    reply.send({ accepted, serverIds });
   },
 
   async pullTickets(req: FastifyRequest, reply: FastifyReply) {
