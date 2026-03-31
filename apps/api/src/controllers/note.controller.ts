@@ -37,27 +37,35 @@ export const noteController = {
         if (!existing) continue;
 
         if (incoming._rev >= existing._rev) {
-          await notesCollection().updateOne(
-            { _id: oid },
-            {
-              $set: {
-                title: incoming.title,
-                content: incoming.content,
-                _deleted: incoming._deleted,
-                updatedAt: now,
+          if (incoming._deleted) {
+            await notesCollection().deleteOne({ _id: oid });
+          } else {
+            await notesCollection().updateOne(
+              { _id: oid },
+              {
+                $set: {
+                  title: incoming.title,
+                  content: incoming.content,
+                  updatedAt: now,
+                },
+                $inc: { _rev: 1 },
               },
-              $inc: { _rev: 1 },
-            },
-          );
+            );
+          }
         }
         serverIds[incoming.clientId] = incoming._serverId;
         accepted++;
       } else {
+        // If the incoming note is already deleted, skip inserting it
+        if (incoming._deleted) {
+          accepted++;
+          continue;
+        }
         const doc: Omit<Note, "_id"> = {
           title: incoming.title,
           content: incoming.content,
           createdBy: userId,
-          _deleted: incoming._deleted ?? false,
+          _deleted: false,
           _rev: 1,
           createdAt: now,
           updatedAt: now,

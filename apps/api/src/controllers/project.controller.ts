@@ -41,26 +41,34 @@ export const projectController = {
         if (!existing) continue;
 
         if (incoming._rev >= existing._rev) {
-          await projectsCollection().updateOne(
-            { _id: oid },
-            {
-              $set: {
-                name: incoming.name,
-                description: incoming.description,
-                status: incoming.status,
-                color: incoming.color,
-                prefix: incoming.prefix,
-                repoUrl: incoming.repoUrl,
-                _deleted: incoming._deleted,
-                updatedAt: now,
+          if (incoming._deleted) {
+            await projectsCollection().deleteOne({ _id: oid });
+          } else {
+            await projectsCollection().updateOne(
+              { _id: oid },
+              {
+                $set: {
+                  name: incoming.name,
+                  description: incoming.description,
+                  status: incoming.status,
+                  color: incoming.color,
+                  prefix: incoming.prefix,
+                  repoUrl: incoming.repoUrl,
+                  updatedAt: now,
+                },
+                $inc: { _rev: 1 },
               },
-              $inc: { _rev: 1 },
-            },
-          );
+            );
+          }
         }
         serverIds[incoming.clientId] = incoming._serverId;
         accepted++;
       } else {
+        // If the incoming project is already deleted, skip inserting it
+        if (incoming._deleted) {
+          accepted++;
+          continue;
+        }
         const doc: Omit<Project, "_id"> = {
           name: incoming.name,
           description: incoming.description,
@@ -69,7 +77,7 @@ export const projectController = {
           prefix: incoming.prefix ?? "PROJ",
           repoUrl: incoming.repoUrl,
           createdBy: userId,
-          _deleted: incoming._deleted ?? false,
+          _deleted: false,
           _rev: 1,
           createdAt: now,
           updatedAt: now,

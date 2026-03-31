@@ -120,10 +120,8 @@ export const ticketController = {
       return reply.status(400).send({ error: "Invalid ticket ID" });
     }
 
-    const result = await ticketsCollection().findOneAndUpdate(
+    const result = await ticketsCollection().findOneAndDelete(
       { _id: oid, createdBy: userId, _deleted: false },
-      { $set: { _deleted: true, updatedAt: new Date() }, $inc: { _rev: 1 } },
-      { returnDocument: "after" }
     );
 
     if (!result) {
@@ -203,17 +201,27 @@ export const ticketController = {
         }
         $set.fieldTimestamps = mergedTs;
 
-        const update: Record<string, unknown> = { $set, $inc: { _rev: 1 } };
-        if (Object.keys(archiveFields).length > 0) {
-          update.$push = {
-            _conflicts: { fields: archiveFields, ts: incomingTs, at: now },
-          };
-        }
+        // If _deleted won the merge, hard-delete from MongoDB
+        if ($set._deleted === true) {
+          await ticketsCollection().deleteOne({ _id: oid });
+        } else {
+          const update: Record<string, unknown> = { $set, $inc: { _rev: 1 } };
+          if (Object.keys(archiveFields).length > 0) {
+            update.$push = {
+              _conflicts: { fields: archiveFields, ts: incomingTs, at: now },
+            };
+          }
 
-        await ticketsCollection().updateOne({ _id: oid }, update);
+          await ticketsCollection().updateOne({ _id: oid }, update);
+        }
         serverIds[incoming.clientId] = incoming._serverId;
         accepted++;
       } else {
+        // If the incoming ticket is already deleted, skip inserting it
+        if (incoming._deleted) {
+          accepted++;
+          continue;
+        }
         // Insert new
         const doc: Omit<Ticket, "_id"> = {
           title: incoming.title,
@@ -226,7 +234,7 @@ export const ticketController = {
           source: "timeharbor",
           fieldTimestamps: incomingTs,
           _conflicts: [],
-          _deleted: incoming._deleted ?? false,
+          _deleted: false,
           _rev: 1,
           createdAt: now,
           updatedAt: now,
