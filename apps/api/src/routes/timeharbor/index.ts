@@ -2,12 +2,7 @@ import { FastifyInstance } from "fastify";
 import { requireAuth } from "../../middleware/require-auth.js";
 import { userController } from "../../controllers/user.controller.js";
 import { profileController } from "../../controllers/profile.controller.js";
-import { ticketController } from "../../controllers/ticket.controller.js";
-import { timeController } from "../../controllers/time.controller.js";
-import { noteController } from "../../controllers/note.controller.js";
-import { projectController } from "../../controllers/project.controller.js";
-import { activityController } from "../../controllers/activity.controller.js";
-import { operationLogController } from "../../controllers/operation-log.controller.js";
+import { encryptedOpLogController } from "../../controllers/encrypted-oplog.controller.js";
 
 const unauthorizedResponse = {
   401: {
@@ -169,428 +164,100 @@ export async function timeharborRoutes(app: FastifyInstance) {
     },
   }, profileController.registerDevice);
 
-  // ── Tickets ────────────────────────────────────────────────────────
+  // ── Encrypted Op-Log Relay (E2E encrypted sync) ──────────────────
 
-  app.post("/me/tickets", {
+  app.post("/sync/oplog", {
     preHandler: [requireAuth],
     schema: {
       tags: ["TimeHarbor"],
-      summary: "Create personal ticket",
+      summary: "Push encrypted op-log batch (server cannot decrypt)",
       security: [{ cookieAuth: [] }],
       body: {
         type: "object",
-        required: ["title"],
+        required: ["deviceId", "lastHLC", "count", "payload"],
         properties: {
-          title: { type: "string" },
-          description: { type: "string" },
-          status: { type: "string", enum: ["Open", "In Progress", "Closed"] },
-          priority: { type: "string", enum: ["Low", "Medium", "High"] },
-          link: { type: "string" },
-          projectId: { type: "string" },
+          deviceId: { type: "string" },
+          lastHLC: { type: "string" },
+          count: { type: "number" },
+          payload: {
+            type: "object",
+            required: ["iv", "ciphertext"],
+            properties: {
+              iv: { type: "string" },
+              ciphertext: { type: "string" },
+            },
+          },
         },
       },
       response: {
-        201: { type: "object", properties: { ticket: { type: "object", additionalProperties: true } } },
+        200: {
+          type: "object",
+          properties: {
+            accepted: { type: "number" },
+          },
+        },
         ...unauthorizedResponse,
       },
     },
-  }, ticketController.createTicket);
+  }, encryptedOpLogController.pushOpLog);
 
-  app.get("/me/tickets", {
+  app.get("/sync/oplog", {
     preHandler: [requireAuth],
     schema: {
       tags: ["TimeHarbor"],
-      summary: "List personal tickets",
+      summary: "Pull encrypted op-log batches from other devices",
       security: [{ cookieAuth: [] }],
       querystring: {
         type: "object",
         properties: {
-          status: { type: "string", enum: ["Open", "In Progress", "Closed"] },
+          deviceId: { type: "string" },
+          since: { type: "string" },
         },
       },
       response: {
         200: {
           type: "object",
           properties: {
-            tickets: { type: "array", items: { type: "object", additionalProperties: true } },
-          },
-        },
-        ...unauthorizedResponse,
-      },
-    },
-  }, ticketController.listTickets);
-
-  app.put("/me/tickets/:ticketId", {
-    preHandler: [requireAuth],
-    schema: {
-      tags: ["TimeHarbor"],
-      summary: "Update personal ticket",
-      security: [{ cookieAuth: [] }],
-      params: {
-        type: "object",
-        required: ["ticketId"],
-        properties: { ticketId: { type: "string" } },
-      },
-      body: {
-        type: "object",
-        properties: {
-          title: { type: "string" },
-          description: { type: "string" },
-          status: { type: "string", enum: ["Open", "In Progress", "Closed"] },
-          priority: { type: "string", enum: ["Low", "Medium", "High"] },
-          link: { type: "string" },
-          projectId: { type: "string" },
-          fieldTimestamps: { type: "object" },
-        },
-      },
-      response: {
-        200: { type: "object", properties: { ticket: { type: "object", additionalProperties: true } } },
-        ...unauthorizedResponse,
-      },
-    },
-  }, ticketController.updateTicket);
-
-  app.delete("/me/tickets/:ticketId", {
-    preHandler: [requireAuth],
-    schema: {
-      tags: ["TimeHarbor"],
-      summary: "Soft-delete personal ticket",
-      security: [{ cookieAuth: [] }],
-      params: {
-        type: "object",
-        required: ["ticketId"],
-        properties: { ticketId: { type: "string" } },
-      },
-      response: {
-        200: { type: "object", properties: { ok: { type: "boolean" } } },
-        ...unauthorizedResponse,
-      },
-    },
-  }, ticketController.deleteTicket);
-
-  // ── Ticket Sync ────────────────────────────────────────────────────
-
-  app.post("/sync/push", {
-    preHandler: [requireAuth],
-    schema: {
-      tags: ["TimeHarbor"],
-      summary: "Push dirty tickets from client",
-      security: [{ cookieAuth: [] }],
-      body: {
-        type: "object",
-        required: ["tickets"],
-        properties: {
-          tickets: { type: "array", items: { type: "object" } },
-        },
-      },
-      response: {
-        200: {
-          type: "object",
-          properties: {
-            accepted: { type: "number" },
-            serverIds: { type: "object", additionalProperties: { type: "string" } },
-          },
-        },
-        ...unauthorizedResponse,
-      },
-    },
-  }, ticketController.pushTickets);
-
-  app.post("/sync/pull", {
-    preHandler: [requireAuth],
-    schema: {
-      tags: ["TimeHarbor"],
-      summary: "Pull tickets updated since lastPulledAt",
-      security: [{ cookieAuth: [] }],
-      body: {
-        type: "object",
-        properties: {
-          lastPulledAt: { type: ["string", "null"], format: "date-time" },
-        },
-      },
-      response: {
-        200: {
-          type: "object",
-          properties: {
-            tickets: { type: "array", items: { type: "object", additionalProperties: true } },
+            batches: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  deviceId: { type: "string" },
+                  lastHLC: { type: "string" },
+                  count: { type: "number" },
+                  payload: {
+                    type: "object",
+                    properties: {
+                      iv: { type: "string" },
+                      ciphertext: { type: "string" },
+                    },
+                  },
+                },
+              },
+            },
             serverTime: { type: "string", format: "date-time" },
           },
         },
         ...unauthorizedResponse,
       },
     },
-  }, ticketController.pullTickets);
+  }, encryptedOpLogController.pullOpLog);
 
-  // ── Time / Work Sessions ───────────────────────────────────────────
-
-  app.post("/time/sync-sessions", {
+  app.delete("/sync/oplog/compact", {
     preHandler: [requireAuth],
     schema: {
       tags: ["TimeHarbor"],
-      summary: "Push work sessions (dedup by clientSessionId)",
+      summary: "Remove old encrypted batches all devices have consumed",
       security: [{ cookieAuth: [] }],
       body: {
         type: "object",
-        required: ["sessions"],
+        required: ["deviceId", "beforeHLC"],
         properties: {
-          sessions: { type: "array", items: { type: "object" } },
+          deviceId: { type: "string" },
+          beforeHLC: { type: "string" },
         },
       },
-      response: {
-        200: {
-          type: "object",
-          properties: {
-            accepted: { type: "number" },
-            affectedDates: { type: "array", items: { type: "string" } },
-          },
-        },
-        ...unauthorizedResponse,
-      },
-    },
-  }, timeController.syncSessions);
-
-  app.get("/time/sessions", {
-    preHandler: [requireAuth],
-    schema: {
-      tags: ["TimeHarbor"],
-      summary: "Pull work sessions updated since timestamp",
-      security: [{ cookieAuth: [] }],
-      querystring: {
-        type: "object",
-        properties: {
-          since: { type: "string", format: "date-time" },
-        },
-      },
-      response: {
-        200: {
-          type: "object",
-          properties: {
-            sessions: { type: "array", items: { type: "object", additionalProperties: true } },
-            serverTime: { type: "string", format: "date-time" },
-          },
-        },
-        ...unauthorizedResponse,
-      },
-    },
-  }, timeController.pullSessions);
-
-  // ── Note Sync ──────────────────────────────────────────────────────
-
-  app.post("/sync/notes/push", {
-    preHandler: [requireAuth],
-    schema: {
-      tags: ["TimeHarbor"],
-      summary: "Push dirty notes from client",
-      security: [{ cookieAuth: [] }],
-      body: {
-        type: "object",
-        required: ["notes"],
-        properties: {
-          notes: { type: "array", items: { type: "object" } },
-        },
-      },
-      response: {
-        200: {
-          type: "object",
-          properties: {
-            accepted: { type: "number" },
-            serverIds: { type: "object", additionalProperties: { type: "string" } },
-          },
-        },
-        ...unauthorizedResponse,
-      },
-    },
-  }, noteController.pushNotes);
-
-  app.post("/sync/notes/pull", {
-    preHandler: [requireAuth],
-    schema: {
-      tags: ["TimeHarbor"],
-      summary: "Pull notes updated since lastPulledAt",
-      security: [{ cookieAuth: [] }],
-      body: {
-        type: "object",
-        properties: {
-          lastPulledAt: { type: ["string", "null"], format: "date-time" },
-        },
-      },
-      response: {
-        200: {
-          type: "object",
-          properties: {
-            notes: { type: "array", items: { type: "object", additionalProperties: true } },
-            serverTime: { type: "string", format: "date-time" },
-          },
-        },
-        ...unauthorizedResponse,
-      },
-    },
-  }, noteController.pullNotes);
-
-  // ── Project Sync ──────────────────────────────────────────────────
-
-  app.post("/sync/projects/push", {
-    preHandler: [requireAuth],
-    schema: {
-      tags: ["TimeHarbor"],
-      summary: "Push dirty projects from client",
-      security: [{ cookieAuth: [] }],
-      body: {
-        type: "object",
-        required: ["projects"],
-        properties: {
-          projects: { type: "array", items: { type: "object" } },
-        },
-      },
-      response: {
-        200: {
-          type: "object",
-          properties: {
-            accepted: { type: "number" },
-            serverIds: { type: "object", additionalProperties: { type: "string" } },
-          },
-        },
-        ...unauthorizedResponse,
-      },
-    },
-  }, projectController.pushProjects);
-
-  app.post("/sync/projects/pull", {
-    preHandler: [requireAuth],
-    schema: {
-      tags: ["TimeHarbor"],
-      summary: "Pull projects updated since lastPulledAt",
-      security: [{ cookieAuth: [] }],
-      body: {
-        type: "object",
-        properties: {
-          lastPulledAt: { type: ["string", "null"], format: "date-time" },
-        },
-      },
-      response: {
-        200: {
-          type: "object",
-          properties: {
-            projects: { type: "array", items: { type: "object", additionalProperties: true } },
-            serverTime: { type: "string", format: "date-time" },
-          },
-        },
-        ...unauthorizedResponse,
-      },
-    },
-  }, projectController.pullProjects);
-
-  // ── Activity Sync ─────────────────────────────────────────────────
-
-  app.post("/sync/activity/push", {
-    preHandler: [requireAuth],
-    schema: {
-      tags: ["TimeHarbor"],
-      summary: "Push dirty activity logs from client",
-      security: [{ cookieAuth: [] }],
-      body: {
-        type: "object",
-        required: ["activities"],
-        properties: {
-          activities: { type: "array", items: { type: "object" } },
-        },
-      },
-      response: {
-        200: {
-          type: "object",
-          properties: {
-            accepted: { type: "number" },
-          },
-        },
-        ...unauthorizedResponse,
-      },
-    },
-  }, activityController.pushActivities);
-
-  app.post("/sync/activity/pull", {
-    preHandler: [requireAuth],
-    schema: {
-      tags: ["TimeHarbor"],
-      summary: "Pull activity logs updated since lastPulledAt",
-      security: [{ cookieAuth: [] }],
-      body: {
-        type: "object",
-        properties: {
-          lastPulledAt: { type: ["string", "null"], format: "date-time" },
-        },
-      },
-      response: {
-        200: {
-          type: "object",
-          properties: {
-            activities: { type: "array", items: { type: "object", additionalProperties: true } },
-            serverTime: { type: "string", format: "date-time" },
-          },
-        },
-        ...unauthorizedResponse,
-      },
-    },
-  }, activityController.pullActivities);
-
-  // ── Operation Log Sync ────────────────────────────────────────────
-
-  app.post("/sync/operations/push", {
-    preHandler: [requireAuth],
-    schema: {
-      tags: ["TimeHarbor"],
-      summary: "Push dirty operation logs from client",
-      security: [{ cookieAuth: [] }],
-      body: {
-        type: "object",
-        required: ["logs"],
-        properties: {
-          logs: { type: "array", items: { type: "object" } },
-        },
-      },
-      response: {
-        200: {
-          type: "object",
-          properties: {
-            accepted: { type: "number" },
-            serverIds: { type: "object", additionalProperties: { type: "string" } },
-          },
-        },
-        ...unauthorizedResponse,
-      },
-    },
-  }, operationLogController.pushOperationLogs);
-
-  app.post("/sync/operations/pull", {
-    preHandler: [requireAuth],
-    schema: {
-      tags: ["TimeHarbor"],
-      summary: "Pull operation logs updated since lastPulledAt",
-      security: [{ cookieAuth: [] }],
-      body: {
-        type: "object",
-        properties: {
-          lastPulledAt: { type: ["string", "null"], format: "date-time" },
-        },
-      },
-      response: {
-        200: {
-          type: "object",
-          properties: {
-            logs: { type: "array", items: { type: "object", additionalProperties: true } },
-            serverTime: { type: "string", format: "date-time" },
-          },
-        },
-        ...unauthorizedResponse,
-      },
-    },
-  }, operationLogController.pullOperationLogs);
-
-  app.delete("/sync/operations/clear", {
-    preHandler: [requireAuth],
-    schema: {
-      tags: ["TimeHarbor"],
-      summary: "Delete all operation logs for the current user",
-      security: [{ cookieAuth: [] }],
       response: {
         200: {
           type: "object",
@@ -601,5 +268,5 @@ export async function timeharborRoutes(app: FastifyInstance) {
         ...unauthorizedResponse,
       },
     },
-  }, operationLogController.clearOperationLogs);
+  }, encryptedOpLogController.compactOpLog);
 }
