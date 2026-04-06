@@ -269,4 +269,22 @@ export async function timeharborRoutes(app: FastifyInstance) {
       },
     },
   }, encryptedOpLogController.compactOpLog);
+
+  app.get("/sync/oplog/status", {
+    preHandler: [requireAuth],
+    schema: {
+      tags: ["TimeHarbor"],
+      summary: "Check whether the user has existing encrypted sync data",
+      security: [{ cookieAuth: [] }],
+      response: {
+        200: {
+          type: "object",
+          properties: {
+            hasData: { type: "boolean" },
+          },
+        },
+        ...unauthorizedResponse,
+      },
+    },
+  }, encryptedOpLogController.hasData);
 }

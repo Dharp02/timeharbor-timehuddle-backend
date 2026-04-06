@@ -10,7 +10,6 @@ export async function ensureIndexes() {
   const encryptedOpLogs = db.collection("encryptedOpLogs");
   await encryptedOpLogs.createIndex({ userId: 1, hlc: 1 });
   await encryptedOpLogs.createIndex({ userId: 1, deviceId: 1, hlc: 1 });
-  await encryptedOpLogs.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 }); // TTL auto-cleanup
 
   console.log("MongoDB indexes ensured");
 }

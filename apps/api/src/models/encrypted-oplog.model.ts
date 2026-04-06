@@ -27,6 +27,4 @@ export interface EncryptedOpLogBatch {
     ciphertext: string;
   };
   createdAt: Date;
-  /** TTL index — MongoDB will auto-remove after this date. */
-  expiresAt: Date;
 }

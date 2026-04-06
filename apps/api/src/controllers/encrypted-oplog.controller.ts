@@ -9,9 +9,6 @@ import type { EncryptedOpLogBatch } from "../models/encrypted-oplog.model.js";
  * them to the user's other devices.  It never decrypts anything.
  */
 
-/** Default TTL for encrypted batches: 90 days. */
-const BATCH_TTL_MS = 90 * 24 * 60 * 60 * 1000;
-
 export const encryptedOpLogController = {
   // ── Push: client sends encrypted batch ────────────────────
 
@@ -32,7 +29,6 @@ export const encryptedOpLogController = {
       count: body.count,
       encryptedPayload: body.payload,
       createdAt: now,
-      expiresAt: new Date(now.getTime() + BATCH_TTL_MS),
     };
 
     await encryptedOpLogsCollection().insertOne(doc as EncryptedOpLogBatch);
@@ -75,6 +71,17 @@ export const encryptedOpLogController = {
     }));
 
     reply.send({ batches: result, serverTime: new Date().toISOString() });
+  },
+
+  // ── Status: check whether user has any encrypted data ──────
+
+  async hasData(req: FastifyRequest, reply: FastifyReply) {
+    const userId = req.user!.id;
+    const count = await encryptedOpLogsCollection().countDocuments(
+      { userId },
+      { limit: 1 },
+    );
+    reply.send({ hasData: count > 0 });
   },
 
   // ── Compact: remove old batches all devices have consumed ─
