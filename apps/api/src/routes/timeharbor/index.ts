@@ -1,5 +1,6 @@
 import { FastifyInstance } from "fastify";
 import { requireAuth } from "../../middleware/require-auth.js";
+import { requireSyncAuth } from "../../middleware/require-sync-auth.js";
 import { userController } from "../../controllers/user.controller.js";
 import { profileController } from "../../controllers/profile.controller.js";
 import { encryptedOpLogController } from "../../controllers/encrypted-oplog.controller.js";
@@ -167,7 +168,7 @@ export async function timeharborRoutes(app: FastifyInstance) {
   // ── Encrypted Op-Log Relay (E2E encrypted sync) ──────────────────
 
   app.post("/sync/oplog", {
-    preHandler: [requireAuth],
+    preHandler: [requireSyncAuth],
     schema: {
       tags: ["TimeHarbor"],
       summary: "Push encrypted op-log batch (server cannot decrypt)",
@@ -202,7 +203,7 @@ export async function timeharborRoutes(app: FastifyInstance) {
   }, encryptedOpLogController.pushOpLog);
 
   app.get("/sync/oplog", {
-    preHandler: [requireAuth],
+    preHandler: [requireSyncAuth],
     schema: {
       tags: ["TimeHarbor"],
       summary: "Pull encrypted op-log batches from other devices",
@@ -245,7 +246,7 @@ export async function timeharborRoutes(app: FastifyInstance) {
   }, encryptedOpLogController.pullOpLog);
 
   app.delete("/sync/oplog/compact", {
-    preHandler: [requireAuth],
+    preHandler: [requireSyncAuth],
     schema: {
       tags: ["TimeHarbor"],
       summary: "Remove old encrypted batches all devices have consumed",
@@ -270,8 +271,32 @@ export async function timeharborRoutes(app: FastifyInstance) {
     },
   }, encryptedOpLogController.compactOpLog);
 
+  app.delete("/sync/oplog/purge", {
+    preHandler: [requireSyncAuth],
+    schema: {
+      tags: ["TimeHarbor"],
+      summary: "Delete ALL encrypted batches for this user (used on key regeneration)",
+      security: [{ cookieAuth: [] }],
+      body: {
+        type: "object",
+        properties: {
+          legacyUserId: { type: "string", description: "Old auth user ID to also purge" },
+        },
+      },
+      response: {
+        200: {
+          type: "object",
+          properties: {
+            deleted: { type: "number" },
+          },
+        },
+        ...unauthorizedResponse,
+      },
+    },
+  }, encryptedOpLogController.purgeAll);
+
   app.get("/sync/oplog/status", {
-    preHandler: [requireAuth],
+    preHandler: [requireSyncAuth],
     schema: {
       tags: ["TimeHarbor"],
       summary: "Check whether the user has existing encrypted sync data",

@@ -97,4 +97,24 @@ export const encryptedOpLogController = {
 
     reply.send({ deleted: result.deletedCount });
   },
+
+  // ── Purge: delete ALL encrypted batches for this user ─────
+
+  async purgeAll(req: FastifyRequest, reply: FastifyReply) {
+    const userId = req.user!.id;
+    const body = (req.body as { legacyUserId?: string } | undefined) ?? {};
+
+    // Delete data under the current userId (identity UUID)
+    // AND any data under the old auth userId if provided
+    const userIds = [userId];
+    if (body.legacyUserId && body.legacyUserId !== userId) {
+      userIds.push(body.legacyUserId);
+    }
+
+    const result = await encryptedOpLogsCollection().deleteMany({
+      userId: { $in: userIds },
+    });
+
+    reply.send({ deleted: result.deletedCount });
+  },
 };
