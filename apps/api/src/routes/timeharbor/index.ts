@@ -169,6 +169,7 @@ export async function timeharborRoutes(app: FastifyInstance) {
 
   app.post("/sync/oplog", {
     preHandler: [requireSyncAuth],
+    bodyLimit: 5 * 1024 * 1024, // 5 MiB – encrypted batches can be large after offline use
     schema: {
       tags: ["TimeHarbor"],
       summary: "Push encrypted op-log batch (server cannot decrypt)",
