@@ -1,5 +1,5 @@
 import { FastifyRequest, FastifyReply } from "fastify";
-import { encryptedOpLogsCollection } from "../models/index.js";
+import { encryptedOpLogsCollection, recoveryKeyStatusCollection } from "../models/index.js";
 import type { EncryptedOpLogBatch } from "../models/encrypted-oplog.model.js";
 
 /**
@@ -116,5 +116,33 @@ export const encryptedOpLogController = {
     });
 
     reply.send({ deleted: result.deletedCount });
+  },
+
+  // ── Recovery key status ───────────────────────────────────
+
+  async markRecoveryKeySaved(req: FastifyRequest, reply: FastifyReply) {
+    const userId = req.user!.id;
+
+    await recoveryKeyStatusCollection().updateOne(
+      { userId },
+      { $set: { saved: true, savedAt: new Date() } },
+      { upsert: true },
+    );
+
+    reply.send({ ok: true });
+  },
+
+  async getRecoveryKeyStatus(req: FastifyRequest, reply: FastifyReply) {
+    const userId = req.user!.id;
+
+    const doc = await recoveryKeyStatusCollection().findOne({ userId });
+    reply.send({ saved: doc?.saved ?? false });
+  },
+
+  async resetRecoveryKeySaved(req: FastifyRequest, reply: FastifyReply) {
+    const userId = req.user!.id;
+
+    await recoveryKeyStatusCollection().deleteOne({ userId });
+    reply.send({ ok: true });
   },
 };

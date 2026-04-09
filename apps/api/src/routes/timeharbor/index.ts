@@ -313,4 +313,50 @@ export async function timeharborRoutes(app: FastifyInstance) {
       },
     },
   }, encryptedOpLogController.hasData);
+
+  // ── Recovery Key Status ──────────────────────────────────────────
+
+  app.post("/sync/recovery-key/saved", {
+    preHandler: [requireSyncAuth],
+    schema: {
+      tags: ["TimeHarbor"],
+      summary: "Mark that the user has saved their recovery key",
+      security: [{ cookieAuth: [] }],
+      response: {
+        200: { type: "object", properties: { ok: { type: "boolean" } } },
+        ...unauthorizedResponse,
+      },
+    },
+  }, encryptedOpLogController.markRecoveryKeySaved);
+
+  app.get("/sync/recovery-key/status", {
+    preHandler: [requireSyncAuth],
+    schema: {
+      tags: ["TimeHarbor"],
+      summary: "Check if the recovery key has been saved for this user",
+      security: [{ cookieAuth: [] }],
+      response: {
+        200: {
+          type: "object",
+          properties: {
+            saved: { type: "boolean" },
+          },
+        },
+        ...unauthorizedResponse,
+      },
+    },
+  }, encryptedOpLogController.getRecoveryKeyStatus);
+
+  app.delete("/sync/recovery-key/saved", {
+    preHandler: [requireSyncAuth],
+    schema: {
+      tags: ["TimeHarbor"],
+      summary: "Reset recovery-key-saved flag (used on key regeneration)",
+      security: [{ cookieAuth: [] }],
+      response: {
+        200: { type: "object", properties: { ok: { type: "boolean" } } },
+        ...unauthorizedResponse,
+      },
+    },
+  }, encryptedOpLogController.resetRecoveryKeySaved);
 }
