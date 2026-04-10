@@ -75,8 +75,8 @@ jobs:
             cd ../..
 
             echo "🚀 Restarting PM2 backend..."
-            sudo pm2 restart timeharbor-backend 2>/dev/null || \
-              sudo pm2 start apps/api/dist/server.js --name timeharbor-backend -- --env production
+            sudo pm2 delete timeharbor-backend 2>/dev/null || true
+            sudo pm2 start apps/api/dist/server.js --name timeharbor-backend
             sudo pm2 save
 
             if [ "$STASHED" = true ]; then
