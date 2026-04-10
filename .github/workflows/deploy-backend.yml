@@ -3,6 +3,7 @@ name: Deploy Backend
 on:
   push:
     branches:
+      - main
       - timeharbor
 
 jobs:
@@ -10,14 +11,17 @@ jobs:
     name: Deploy Backend - ${{ matrix.env }}
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         include:
           - env: DEV
             host_secret: DEV_BACKEND_HOST
             port: 2047
+            branch: timeharbor
           - env: PROD
             host_secret: PROD_BACKEND_HOST
             port: 2030
+            branch: main
 
     steps:
       - name: Setup SSH
@@ -35,9 +39,19 @@ jobs:
               ${{ secrets.DEPLOY_SSH_USER }}@${{ secrets[matrix.host_secret] }} << 'EOF'
             set -e
 
-            cd /home/pdharamkar/timeharbor-timehuddle-backend
+            REPO_DIR="/home/pdharamkar/timeharbor-timehuddle-backend"
 
-            echo "� Stashing local changes..."
+            # Fix git safe directory (sudo npm creates root-owned files)
+            git config --global --add safe.directory "$REPO_DIR" 2>/dev/null || true
+
+            if [ ! -d "$REPO_DIR/.git" ]; then
+              echo "📥 Cloning repository for first-time setup..."
+              git clone -b ${{ matrix.branch }} https://github.com/Dharp02/timeharbor-timehuddle-backend.git "$REPO_DIR"
+            fi
+
+            cd "$REPO_DIR"
+
+            echo "📦 Stashing local changes..."
             STASHED=false
             if ! git diff --quiet || ! git diff --cached --quiet; then
               git stash push -m "deploy-auto-stash"
@@ -47,9 +61,10 @@ jobs:
             echo "🛑 Stopping PM2 backend..."
             sudo pm2 stop timeharbor-backend 2>/dev/null || true
 
-            echo "🔄 Fetching and pulling latest code..."
+            echo "🔄 Switching to ${{ matrix.branch }} and pulling latest code..."
             git fetch origin
-            git pull origin timeharbor
+            git checkout ${{ matrix.branch }}
+            git pull origin ${{ matrix.branch }}
 
             echo "⚙️  Installing dependencies..."
             cd apps/api

@@ -117,7 +117,7 @@ export const profileController = {
 
     await profilesCollection().findOneAndUpdate(
       { userId, app: "timeharbor" as const },
-      { $set: { avatarUrl: null, updatedAt: new Date() } },
+      { $unset: { avatarUrl: "" }, $set: { updatedAt: new Date() } },
       { returnDocument: "after" }
     );
 
