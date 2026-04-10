@@ -1,0 +1,78 @@
+name: Deploy Backend
+
+on:
+  push:
+    branches:
+      - timeharbor
+
+jobs:
+  deploy:
+    name: Deploy Backend - ${{ matrix.env }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - env: DEV
+            host_secret: DEV_BACKEND_HOST
+            port: 2047
+          - env: PROD
+            host_secret: PROD_BACKEND_HOST
+            port: 2030
+
+    steps:
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.DEPLOY_SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -p ${{ matrix.port }} ${{ secrets[matrix.host_secret] }} >> ~/.ssh/known_hosts 2>/dev/null || true
+
+      - name: Deploy to ${{ matrix.env }}
+        run: |
+          ssh -p ${{ matrix.port }} \
+              -i ~/.ssh/deploy_key \
+              -o StrictHostKeyChecking=no \
+              ${{ secrets.DEPLOY_SSH_USER }}@${{ secrets[matrix.host_secret] }} << 'EOF'
+            set -e
+
+            cd /home/pdharamkar/timeharbor-timehuddle-backend
+
+            echo "� Stashing local changes..."
+            STASHED=false
+            if ! git diff --quiet || ! git diff --cached --quiet; then
+              git stash push -m "deploy-auto-stash"
+              STASHED=true
+            fi
+
+            echo "🛑 Stopping PM2 backend..."
+            sudo pm2 stop timeharbor-backend 2>/dev/null || true
+
+            echo "🔄 Fetching and pulling latest code..."
+            git fetch origin
+            git pull origin timeharbor
+
+            echo "⚙️  Installing dependencies..."
+            cd apps/api
+            sudo npm install
+
+            echo "🏗️  Building backend..."
+            sudo npm run build
+            cd ../..
+
+            echo "🚀 Restarting PM2 backend..."
+            sudo pm2 restart timeharbor-backend 2>/dev/null || \
+              sudo pm2 start apps/api/dist/server.js --name timeharbor-backend -- --env production
+            sudo pm2 save
+
+            if [ "$STASHED" = true ]; then
+              echo "📦 Restoring stashed changes..."
+              git stash pop || echo "⚠️  Stash pop had conflicts, manual resolution needed"
+            fi
+
+            echo "✅ ${{ matrix.env }} backend deployment completed!"
+            sudo pm2 status
+          EOF
+
+      - name: Deployment Status
+        if: failure()
+        run: echo "❌ ${{ matrix.env }} backend deployment failed!"
