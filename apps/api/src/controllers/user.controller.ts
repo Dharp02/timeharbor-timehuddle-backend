@@ -1,19 +1,14 @@
 import { FastifyRequest, FastifyReply } from "fastify";
-import { userService } from "../services/user.service.js";
 
 export class UserController {
-  /** GET /me — return the authenticated user's profile */
+  /** GET /me — return the current local identity */
   async getMe(req: FastifyRequest, reply: FastifyReply) {
     return reply.send({ user: req.user });
   }
 
-  /** GET /me/profile — return full user document from DB */
+  /** GET /me/profile — return the same identity shape for compatibility */
   async getMyProfile(req: FastifyRequest, reply: FastifyReply) {
-    const user = await userService.findById(req.user!.id);
-    if (!user) {
-      return reply.status(404).send({ error: "User not found" });
-    }
-    return reply.send({ user });
+    return reply.send({ user: req.user });
   }
 }
 
