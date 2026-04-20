@@ -81,8 +81,8 @@ export async function buildApp(opts: { logger?: boolean } = {}): Promise<Fastify
   await app.register(healthRoutes);
 
   // App-specific routes
-  await app.register(timeharborRoutes, { prefix: "/api/timeharbor" });
-  await app.register(timehuddleRoutes, { prefix: "/api/timehuddle" });
+  await app.register(timeharborRoutes, { prefix: "/v1/timeharbor" });
+  await app.register(timehuddleRoutes, { prefix: "/v1/timehuddle" });
 
   return app;
 }
