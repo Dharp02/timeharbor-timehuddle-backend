@@ -53,25 +53,25 @@ afterAll(async () => {
 
 describe("requireAuth middleware", () => {
   it("returns 401 when no session cookie is provided", async () => {
-    const res = await app.inject({ method: "GET", url: "/v1/timeharbor/me" });
+    const res = await app.inject({ method: "GET", url: "/v1/me" });
     expect(res.statusCode).toBe(401);
   });
 
   it("passes through with a valid session cookie", async () => {
     const res = await app.inject({
       method: "GET",
-      url: "/v1/timeharbor/me",
+      url: "/v1/me",
       headers: { cookie: sessionCookie },
     });
     expect(res.statusCode).toBe(200);
   });
 });
 
-describe("GET /v1/timeharbor/me", () => {
+describe("GET /v1/me", () => {
   it("returns the authenticated user's data", async () => {
     const res = await app.inject({
       method: "GET",
-      url: "/v1/timeharbor/me",
+      url: "/v1/me",
       headers: { cookie: sessionCookie },
     });
 

@@ -11,9 +11,7 @@ import swaggerUi from "@fastify/swagger-ui";
 import { connectDB } from "./lib/db.js";
 import { ensureIndexes } from "./lib/ensure-indexes.js";
 import { healthRoutes } from "./routes/health.js";
-import { timeharborRoutes } from "./routes/timeharbor/index.js";
-import { timehuddleRoutes } from "./routes/timehuddle/index.js";
-import { appContext } from "./middleware/app-context.js";
+import { userRoutes } from "./routes/users.js";
 
 const app = Fastify({ logger: true, ignoreTrailingSlash: true });
 
@@ -42,8 +40,8 @@ export async function buildApp(opts: { logger?: boolean } = {}): Promise<Fastify
   await app.register(swagger, {
     openapi: {
       info: {
-        title: "TimeHarbor / TimeHuddle API",
-        description: "Shared backend API for TimeHarbor and TimeHuddle applications",
+        title: "Timecore API",
+        description: "Shared backend API",
         version: "1.0.0",
       },
       servers: [
@@ -52,8 +50,11 @@ export async function buildApp(opts: { logger?: boolean } = {}): Promise<Fastify
       ],
       tags: [
         { name: "Health", description: "Health check endpoints" },
-        { name: "TimeHarbor", description: "TimeHarbor app endpoints" },
-        { name: "TimeHuddle", description: "TimeHuddle app endpoints" },
+        {
+          name: "Auth",
+          description: "Better Auth endpoints (sign-up, sign-in, sign-out, session)",
+        },
+        { name: "Users", description: "User session and profile endpoints" },
       ],
     },
   });
@@ -74,9 +75,8 @@ export async function buildApp(opts: { logger?: boolean } = {}): Promise<Fastify
   // Health check
   await app.register(healthRoutes);
 
-  // App-specific routes
-  await app.register(timeharborRoutes, { prefix: "/v1/timeharbor" });
-  await app.register(timehuddleRoutes, { prefix: "/v1/timehuddle" });
+  // App routes
+  await app.register(userRoutes, { prefix: "/v1" });
 
   return app;
 }
