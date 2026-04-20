@@ -1,12 +1,8 @@
 import "dotenv/config";
 import { fileURLToPath } from "url";
-<<<<<<< HEAD
 import path from "path";
 import fs from "fs";
 import Fastify from "fastify";
-=======
-import Fastify, { FastifyInstance } from "fastify";
->>>>>>> 801a3e1 (refactor: rename project to timecore and update package.json scripts)
 import cors from "@fastify/cors";
 import multipart from "@fastify/multipart";
 import fastifyStatic from "@fastify/static";
@@ -67,9 +63,7 @@ export async function buildApp(opts: { logger?: boolean } = {}): Promise<Fastify
   });
 
   await app.register(cors, {
-    origin: process.env.TRUSTED_ORIGINS
-      ? process.env.TRUSTED_ORIGINS.split(",")
-      : [],
+    origin: process.env.TRUSTED_ORIGINS ? process.env.TRUSTED_ORIGINS.split(",") : [],
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   });

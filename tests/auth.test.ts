@@ -35,13 +35,15 @@ beforeAll(async () => {
   // Use asResponse: true to capture the real Set-Cookie values (the cookie
   // value includes a signature after the token, e.g. "token.hash=...")
   await auth.api.signUpEmail({ body: TEST_USER });
-  const signInResponse = await auth.api.signInEmail({
+  const signInResponse = (await auth.api.signInEmail({
     body: { email: TEST_USER.email, password: TEST_USER.password },
     asResponse: true,
-  }) as Response;
+  })) as Response;
 
   // Extract name=value from each Set-Cookie header (strip attributes like Path, HttpOnly, etc.)
-  const rawCookies = signInResponse.headers.getSetCookie?.() ?? [signInResponse.headers.get("set-cookie") ?? ""];
+  const rawCookies = signInResponse.headers.getSetCookie?.() ?? [
+    signInResponse.headers.get("set-cookie") ?? "",
+  ];
   sessionCookie = rawCookies.map((c) => c.split(";")[0].trim()).join("; ");
 }, 15000);
 

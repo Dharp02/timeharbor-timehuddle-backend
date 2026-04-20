@@ -22,11 +22,17 @@ function buildAppUser(req: FastifyRequest): AppUser {
   };
 }
 
-export async function requireAuth(
-  req: FastifyRequest,
-  reply: FastifyReply
-) {
-  req.user = buildAppUser(req);
+export async function requireAuth(req: FastifyRequest, reply: FastifyReply) {
+  const session = await auth.api.getSession({
+    headers: fromNodeHeaders(req.headers),
+  });
+
+  if (!session) {
+    return reply.status(401).send({ error: "Unauthorized" });
+  }
+
+  req.user = session.user;
+  req.session = session.session;
 }
 
 // Extend Fastify types globally

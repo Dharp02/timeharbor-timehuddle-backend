@@ -12,62 +12,70 @@ const unauthorizedResponse = {
 export async function timehuddleRoutes(app: FastifyInstance) {
   // All routes here are prefixed with /api/timehuddle
 
-  app.get("/me", {
-    preHandler: [requireAuth],
-    schema: {
-      tags: ["TimeHuddle"],
-      summary: "Get current user (from session)",
-      security: [{ cookieAuth: [] }],
-      response: {
-        200: {
-          type: "object",
-          properties: {
-            user: {
-              type: "object",
-              properties: {
-                id: { type: "string" },
-                name: { type: "string" },
-                email: { type: "string", format: "email" },
-                image: { type: "string", nullable: true },
+  app.get(
+    "/me",
+    {
+      preHandler: [requireAuth],
+      schema: {
+        tags: ["TimeHuddle"],
+        summary: "Get current user (from session)",
+        security: [{ cookieAuth: [] }],
+        response: {
+          200: {
+            type: "object",
+            properties: {
+              user: {
+                type: "object",
+                properties: {
+                  id: { type: "string" },
+                  name: { type: "string" },
+                  email: { type: "string", format: "email" },
+                  image: { type: "string", nullable: true },
+                },
               },
             },
           },
+          ...unauthorizedResponse,
         },
-        ...unauthorizedResponse,
       },
     },
-  }, userController.getMe);
+    userController.getMe
+  );
 
-  app.get("/me/profile", {
-    preHandler: [requireAuth],
-    schema: {
-      tags: ["TimeHuddle"],
-      summary: "Get full user profile from DB",
-      security: [{ cookieAuth: [] }],
-      response: {
-        200: {
-          type: "object",
-          properties: {
-            user: {
-              type: "object",
-              properties: {
-                _id: { type: "string" },
-                name: { type: "string" },
-                email: { type: "string", format: "email" },
-                emailVerified: { type: "boolean" },
-                image: { type: "string", nullable: true },
-                createdAt: { type: "string", format: "date-time" },
-                updatedAt: { type: "string", format: "date-time" },
+  app.get(
+    "/me/profile",
+    {
+      preHandler: [requireAuth],
+      schema: {
+        tags: ["TimeHuddle"],
+        summary: "Get full user profile from DB",
+        security: [{ cookieAuth: [] }],
+        response: {
+          200: {
+            type: "object",
+            properties: {
+              user: {
+                type: "object",
+                properties: {
+                  _id: { type: "string" },
+                  name: { type: "string" },
+                  email: { type: "string", format: "email" },
+                  emailVerified: { type: "boolean" },
+                  image: { type: "string", nullable: true },
+                  createdAt: { type: "string", format: "date-time" },
+                  updatedAt: { type: "string", format: "date-time" },
+                },
               },
             },
           },
-        },
-        ...unauthorizedResponse,
-        404: {
-          type: "object",
-          properties: { error: { type: "string", example: "User not found" } },
+          ...unauthorizedResponse,
+          404: {
+            type: "object",
+            properties: { error: { type: "string", example: "User not found" } },
+          },
         },
       },
     },
-  }, userController.getMyProfile);
+    userController.getMyProfile
+  );
 }

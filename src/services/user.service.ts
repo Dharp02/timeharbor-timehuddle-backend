@@ -11,11 +11,7 @@ export class UserService {
   }
 
   async list(limit = 50, skip = 0) {
-    return usersCollection()
-      .find()
-      .skip(skip)
-      .limit(limit)
-      .toArray();
+    return usersCollection().find().skip(skip).limit(limit).toArray();
   }
 }
 
