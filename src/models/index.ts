@@ -2,6 +2,7 @@ import { getDB } from "../lib/db.js";
 import type { User } from "./user.model.js";
 import type { Team } from "./team.model.js";
 import type { Ticket } from "./ticket.model.js";
+import type { ClockEvent } from "./clock.model.js";
 
 // Collection accessor — better-auth's MongoDB adapter uses "user" (singular)
 export function usersCollection() {
@@ -16,4 +17,9 @@ export function teamsCollection() {
 // Tickets
 export function ticketsCollection() {
   return getDB().collection<Ticket>("tickets");
+}
+
+// Clock events
+export function clockEventsCollection() {
+  return getDB().collection<ClockEvent>("clockevents");
 }

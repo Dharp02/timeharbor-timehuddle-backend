@@ -14,6 +14,7 @@ import { healthRoutes } from "./routes/health.js";
 import { userRoutes } from "./routes/users.js";
 import { ticketRoutes } from "./routes/tickets.js";
 import { teamRoutes } from "./routes/teams.js";
+import { clockRoutes } from "./routes/clock.js";
 
 const app = Fastify({ logger: true, ignoreTrailingSlash: true });
 
@@ -59,6 +60,7 @@ export async function buildApp(opts: { logger?: boolean } = {}): Promise<Fastify
         { name: "Users", description: "User session and profile endpoints" },
         { name: "Teams", description: "Team management endpoints" },
         { name: "Tickets", description: "Ticket CRUD, timer, and admin endpoints" },
+        { name: "Clock", description: "Clock in/out, ticket timers, timesheet, and SSE live stream" },
       ],
     },
   });
@@ -83,6 +85,7 @@ export async function buildApp(opts: { logger?: boolean } = {}): Promise<Fastify
   await app.register(userRoutes, { prefix: "/v1" });
   await app.register(teamRoutes, { prefix: "/v1" });
   await app.register(ticketRoutes, { prefix: "/v1" });
+  await app.register(clockRoutes, { prefix: "/v1" });
 
   return app;
 }
