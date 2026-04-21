@@ -11,8 +11,7 @@ export const auth = betterAuth({
     requireEmailVerification: false,
     sendResetPassword: async ({ user, url, token }) => {
       const resetUrl =
-        url ??
-        `${process.env.APP_URL ?? "http://localhost:3000"}/reset-password?token=${token}`;
+        url ?? `${process.env.APP_URL ?? "http://localhost:3000"}/reset-password?token=${token}`;
       await sendEmail({
         to: user.email,
         subject: "Reset your password",

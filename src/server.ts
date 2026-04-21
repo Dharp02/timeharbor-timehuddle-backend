@@ -84,7 +84,7 @@ export async function buildApp(opts: { logger?: boolean } = {}): Promise<Fastify
 async function bootstrap() {
   await connectDB();
   const app = await buildApp();
-  const port = Number(process.env.PORT) || 3001;
+  const port = Number(process.env.PORT) || 4000;
   await app.listen({ port, host: "0.0.0.0" });
   console.log(`API running on http://localhost:${port}`);
   console.log(`Swagger UI at http://localhost:${port}/docs`);
