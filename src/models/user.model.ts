@@ -8,6 +8,8 @@ export interface User {
   email: string;
   emailVerified: boolean;
   image?: string | null;
+  bio?: string;
+  website?: string;
   createdAt: Date;
   updatedAt: Date;
 }

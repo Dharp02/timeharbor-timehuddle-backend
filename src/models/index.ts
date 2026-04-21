@@ -4,9 +4,9 @@ import type { Profile } from "./profile.model.js";
 import type { EncryptedOpLogBatch } from "./encrypted-oplog.model.js";
 import type { RecoveryKeyStatus } from "./recovery-key-status.model.js";
 
-// Collection accessor — use this everywhere instead of getDB().collection("users")
+// Collection accessor — better-auth's MongoDB adapter uses "user" (singular)
 export function usersCollection() {
-  return getDB().collection<User>("users");
+  return getDB().collection<User>("user");
 }
 
 export function profilesCollection() {
