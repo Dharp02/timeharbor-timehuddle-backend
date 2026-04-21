@@ -9,7 +9,7 @@ import { ObjectId } from "mongodb";
  */
 export interface EncryptedOpLogBatch {
   _id: ObjectId;
-  /** Better Auth user id (used for scoping queries). */
+  /** User id used for scoping queries. */
   userId: string;
   /** Originating device identifier. */
   deviceId: string;
