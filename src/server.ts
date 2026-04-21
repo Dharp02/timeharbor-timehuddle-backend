@@ -12,6 +12,7 @@ import { connectDB } from "./lib/db.js";
 import { ensureIndexes } from "./lib/ensure-indexes.js";
 import { healthRoutes } from "./routes/health.js";
 import { userRoutes } from "./routes/users.js";
+import { ticketRoutes } from "./routes/tickets.js";
 
 const app = Fastify({ logger: true, ignoreTrailingSlash: true });
 
@@ -55,6 +56,7 @@ export async function buildApp(opts: { logger?: boolean } = {}): Promise<Fastify
           description: "Better Auth endpoints (sign-up, sign-in, sign-out, session)",
         },
         { name: "Users", description: "User session and profile endpoints" },
+        { name: "Tickets", description: "Ticket CRUD, timer, and admin endpoints" },
       ],
     },
   });
@@ -77,6 +79,7 @@ export async function buildApp(opts: { logger?: boolean } = {}): Promise<Fastify
 
   // App routes
   await app.register(userRoutes, { prefix: "/v1" });
+  await app.register(ticketRoutes, { prefix: "/v1" });
 
   return app;
 }
