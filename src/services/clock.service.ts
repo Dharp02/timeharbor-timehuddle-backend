@@ -1,6 +1,7 @@
 import { ObjectId } from "mongodb";
-import { clockEventsCollection, teamsCollection, ticketsCollection } from "../models/index.js";
+import { clockEventsCollection, teamsCollection, ticketsCollection, usersCollection } from "../models/index.js";
 import type { ClockEvent, ClockEventTicket } from "../models/clock.model.js";
+import { notificationService } from "./notification.service.js";
 
 function isValidId(id: string): boolean {
   return /^[0-9a-f]{24}$/i.test(id);
@@ -139,6 +140,29 @@ export class ClockService {
     if (!created) return "forbidden";
     const pub = toPublicClockEvent(created);
     broadcast(teamId, pub);
+
+    // Notify team admins
+    const user = await usersCollection().findOne({ _id: userId });
+    const userName = user?.name ?? user?.email?.split("@")[0] ?? "Someone";
+    const notifyAdmins = (team.admins ?? []).filter((id) => id !== userId);
+    await Promise.all(
+      notifyAdmins.map((adminId) =>
+        notificationService.create({
+          userId: adminId,
+          title: "TiméHuddle",
+          body: `${userName} clocked in to ${team.name}`,
+          notificationData: {
+            type: "clock-in",
+            userId,
+            userName,
+            teamName: team.name,
+            teamId,
+            url: `/member/${teamId}/${userId}`,
+          },
+        }).catch(() => {}),
+      ),
+    );
+
     return pub;
   }
 
@@ -188,6 +212,37 @@ export class ClockService {
     if (!updated) return "not-found";
     const pub = toPublicClockEvent(updated);
     broadcast(teamId, null); // null = user is no longer clocked in
+
+    // Notify team admins
+    const team = await teamsCollection().findOne({ _id: new ObjectId(teamId) });
+    if (team) {
+      const user = await usersCollection().findOne({ _id: userId });
+      const userName = user?.name ?? user?.email?.split("@")[0] ?? "Someone";
+      const totalSecs = pub.accumulatedTime ?? 0;
+      const h = Math.floor(totalSecs / 3600);
+      const m = Math.floor((totalSecs % 3600) / 60);
+      const durationText = h > 0 ? `${h}h ${m}m` : `${m}m`;
+      const notifyAdmins = (team.admins ?? []).filter((id) => id !== userId);
+      await Promise.all(
+        notifyAdmins.map((adminId) =>
+          notificationService.create({
+            userId: adminId,
+            title: "TiméHuddle",
+            body: `${userName} clocked out of ${team.name} (${durationText})`,
+            notificationData: {
+              type: "clock-out",
+              userId,
+              userName,
+              teamName: team.name,
+              teamId,
+              duration: durationText,
+              url: `/member/${teamId}/${userId}`,
+            },
+          }).catch(() => {}),
+        ),
+      );
+    }
+
     return pub;
   }
 
