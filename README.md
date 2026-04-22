@@ -1,6 +1,6 @@
 # timeharbor-timehuddle-backend
 
-Backend monorepo for [TimeharborApp](../timeharbourapp/README.md) — a Fastify API server with a shared time calculation engine.
+Backend API for [Timeharbor](https://github.com/Dharp02/TimeharborApp), [Timehuddle](https://github.com/mieweb/timehuddle), and more — A Fastify API server with a shared time calculation engine.
 
 ## Structure
 
