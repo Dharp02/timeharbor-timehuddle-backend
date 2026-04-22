@@ -77,10 +77,7 @@ export const encryptedOpLogController = {
 
   async hasData(req: FastifyRequest, reply: FastifyReply) {
     const userId = req.user!.id;
-    const count = await encryptedOpLogsCollection().countDocuments(
-      { userId },
-      { limit: 1 },
-    );
+    const count = await encryptedOpLogsCollection().countDocuments({ userId }, { limit: 1 });
     reply.send({ hasData: count > 0 });
   },
 
@@ -126,7 +123,7 @@ export const encryptedOpLogController = {
     await recoveryKeyStatusCollection().updateOne(
       { userId },
       { $set: { saved: true, savedAt: new Date() } },
-      { upsert: true },
+      { upsert: true }
     );
 
     reply.send({ ok: true });

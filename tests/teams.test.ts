@@ -56,7 +56,7 @@ async function inject(
   method: string,
   url: string,
   cookie: string,
-  payload?: Record<string, unknown>,
+  payload?: Record<string, unknown>
 ) {
   return app.inject({
     method: method as any,
@@ -75,11 +75,7 @@ beforeAll(async () => {
 
   const db = client.db();
 
-  await Promise.all([
-    purgeUser(OWNER.email),
-    purgeUser(MEMBER.email),
-    purgeUser(OUTSIDER.email),
-  ]);
+  await Promise.all([purgeUser(OWNER.email), purgeUser(MEMBER.email), purgeUser(OUTSIDER.email)]);
 
   await auth.api.signUpEmail({ body: OWNER });
   await auth.api.signUpEmail({ body: MEMBER });
@@ -188,7 +184,10 @@ describe("POST /v1/teams", () => {
     expect(team.isPersonal).toBe(false);
     expect(typeof team.code).toBe("string");
     // cleanup
-    await client.db().collection("teams").deleteOne({ _id: new ObjectId(team.id) });
+    await client
+      .db()
+      .collection("teams")
+      .deleteOne({ _id: new ObjectId(team.id) });
   });
 
   it("requires name — 400", async () => {
@@ -306,15 +305,15 @@ describe("POST /v1/teams/:id/invite", () => {
 
 describe("PUT /v1/teams/:id/members/:userId/role", () => {
   it("admin can promote member to admin — 200", async () => {
-    const res = await inject(
-      "PUT",
-      `/v1/teams/${teamId}/members/${memberId}/role`,
-      ownerCookie,
-      { role: "admin" },
-    );
+    const res = await inject("PUT", `/v1/teams/${teamId}/members/${memberId}/role`, ownerCookie, {
+      role: "admin",
+    });
     expect(res.statusCode).toBe(200);
     // verify
-    const team = await client.db().collection("teams").findOne({ _id: new ObjectId(teamId) });
+    const team = await client
+      .db()
+      .collection("teams")
+      .findOne({ _id: new ObjectId(teamId) });
     expect(team?.admins).toContain(memberId);
     // demote back
     await inject("PUT", `/v1/teams/${teamId}/members/${memberId}/role`, ownerCookie, {
@@ -323,22 +322,16 @@ describe("PUT /v1/teams/:id/members/:userId/role", () => {
   });
 
   it("non-admin is forbidden — 403", async () => {
-    const res = await inject(
-      "PUT",
-      `/v1/teams/${teamId}/members/${ownerId}/role`,
-      memberCookie,
-      { role: "member" },
-    );
+    const res = await inject("PUT", `/v1/teams/${teamId}/members/${ownerId}/role`, memberCookie, {
+      role: "member",
+    });
     expect(res.statusCode).toBe(403);
   });
 
   it("cannot demote last admin — 400", async () => {
-    const res = await inject(
-      "PUT",
-      `/v1/teams/${teamId}/members/${ownerId}/role`,
-      ownerCookie,
-      { role: "member" },
-    );
+    const res = await inject("PUT", `/v1/teams/${teamId}/members/${ownerId}/role`, ownerCookie, {
+      role: "member",
+    });
     expect(res.statusCode).toBe(400);
   });
 });
@@ -353,31 +346,22 @@ describe("DELETE /v1/teams/:id/members/:userId", () => {
       .collection("teams")
       .updateOne({ _id: new ObjectId(teamId) }, { $addToSet: { members: outsiderId } } as any);
 
-    const res = await inject(
-      "DELETE",
-      `/v1/teams/${teamId}/members/${outsiderId}`,
-      ownerCookie,
-    );
+    const res = await inject("DELETE", `/v1/teams/${teamId}/members/${outsiderId}`, ownerCookie);
     expect(res.statusCode).toBe(200);
-    const team = await client.db().collection("teams").findOne({ _id: new ObjectId(teamId) });
+    const team = await client
+      .db()
+      .collection("teams")
+      .findOne({ _id: new ObjectId(teamId) });
     expect(team?.members).not.toContain(outsiderId);
   });
 
   it("non-admin is forbidden — 403", async () => {
-    const res = await inject(
-      "DELETE",
-      `/v1/teams/${teamId}/members/${ownerId}`,
-      memberCookie,
-    );
+    const res = await inject("DELETE", `/v1/teams/${teamId}/members/${ownerId}`, memberCookie);
     expect(res.statusCode).toBe(403);
   });
 
   it("cannot remove self — 400", async () => {
-    const res = await inject(
-      "DELETE",
-      `/v1/teams/${teamId}/members/${ownerId}`,
-      ownerCookie,
-    );
+    const res = await inject("DELETE", `/v1/teams/${teamId}/members/${ownerId}`, ownerCookie);
     expect(res.statusCode).toBe(400);
   });
 });

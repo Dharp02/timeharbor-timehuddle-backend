@@ -85,7 +85,7 @@ export async function ticketRoutes(app: FastifyInstance) {
       const result = await ticketService.findByTeam(teamId, req.user!.id);
       if (result === "forbidden") return reply.status(403).send({ error: "Not a team member" });
       return reply.send({ tickets: result.map(toPublicTicket) });
-    },
+    }
   );
 
   // POST /v1/tickets
@@ -131,7 +131,7 @@ export async function ticketRoutes(app: FastifyInstance) {
       if (result === "forbidden") return reply.status(403).send({ error: "Not a team member" });
       const ticket = await ticketService.findById(result.id);
       return reply.status(201).send({ ticket: toPublicTicket(ticket!) });
-    },
+    }
   );
 
   // PUT /v1/tickets/:id
@@ -173,7 +173,7 @@ export async function ticketRoutes(app: FastifyInstance) {
       if (result === "not-found") return reply.status(404).send({ error: "Ticket not found" });
       if (result === "forbidden") return reply.status(403).send({ error: "Not your ticket" });
       return reply.send({ ticket: toPublicTicket(result) });
-    },
+    }
   );
 
   // DELETE /v1/tickets/:id  (soft-delete: status → "deleted")
@@ -199,7 +199,7 @@ export async function ticketRoutes(app: FastifyInstance) {
       if (result === "not-found") return reply.status(404).send({ error: "Ticket not found" });
       if (result === "forbidden") return reply.status(403).send({ error: "Not your ticket" });
       return reply.send({ ok: true });
-    },
+    }
   );
 
   // POST /v1/tickets/batch-status  — must be registered before /:id routes to prevent conflict
@@ -236,7 +236,7 @@ export async function ticketRoutes(app: FastifyInstance) {
       const result = await ticketService.batchUpdateStatus(ticketIds, teamId, status, req.user!.id);
       if (result === "forbidden") return reply.status(403).send({ error: "Not a team admin" });
       return reply.send({ modified: result });
-    },
+    }
   );
 
   // POST /v1/tickets/:id/start
@@ -269,7 +269,7 @@ export async function ticketRoutes(app: FastifyInstance) {
       if (result === "not-found") return reply.status(404).send({ error: "Ticket not found" });
       if (result === "forbidden") return reply.status(403).send({ error: "Not your ticket" });
       return reply.send({ ticket: toPublicTicket(result) });
-    },
+    }
   );
 
   // POST /v1/tickets/:id/stop
@@ -302,7 +302,7 @@ export async function ticketRoutes(app: FastifyInstance) {
       if (result === "not-found") return reply.status(404).send({ error: "Ticket not found" });
       if (result === "forbidden") return reply.status(403).send({ error: "Not your ticket" });
       return reply.send({ ticket: toPublicTicket(result) });
-    },
+    }
   );
 
   // PUT /v1/tickets/:id/assign
@@ -340,6 +340,6 @@ export async function ticketRoutes(app: FastifyInstance) {
       if (result === "bad-assignee")
         return reply.status(422).send({ error: "Assignee must be a team member" });
       return reply.send({ ticket: toPublicTicket(result) });
-    },
+    }
   );
 }

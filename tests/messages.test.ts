@@ -55,7 +55,7 @@ async function inject(
   method: string,
   url: string,
   cookie: string,
-  payload?: Record<string, unknown>,
+  payload?: Record<string, unknown>
 ) {
   return app.inject({
     method: method as any,
@@ -199,7 +199,7 @@ describe("GET /v1/messages", () => {
     const res = await inject(
       "GET",
       `/v1/messages?teamId=${teamId}&adminId=${adminId}&memberId=${memberId}`,
-      adminCookie,
+      adminCookie
     );
     expect(res.statusCode).toBe(200);
     const { messages } = res.json();
@@ -211,7 +211,7 @@ describe("GET /v1/messages", () => {
     const res = await inject(
       "GET",
       `/v1/messages?teamId=${teamId}&adminId=${adminId}&memberId=${memberId}`,
-      memberCookie,
+      memberCookie
     );
     expect(res.statusCode).toBe(200);
     expect(Array.isArray(res.json().messages)).toBe(true);
@@ -221,7 +221,7 @@ describe("GET /v1/messages", () => {
     const res = await inject(
       "GET",
       `/v1/messages?teamId=${teamId}&adminId=${adminId}&memberId=${memberId}`,
-      otherCookie,
+      otherCookie
     );
     expect(res.statusCode).toBe(403);
   });

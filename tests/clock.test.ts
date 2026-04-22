@@ -57,7 +57,7 @@ async function inject(
   method: string,
   url: string,
   cookie: string,
-  payload?: Record<string, unknown>,
+  payload?: Record<string, unknown>
 ) {
   return app.inject({
     method: method as any,
@@ -326,7 +326,7 @@ describe("GET /v1/clock/timesheet", () => {
     const res = await inject(
       "GET",
       `/v1/clock/timesheet?userId=${workerId}&startDate=${today}&endDate=${today}`,
-      workerCookie,
+      workerCookie
     );
     expect(res.statusCode).toBe(200);
     const body = res.json();
@@ -340,7 +340,7 @@ describe("GET /v1/clock/timesheet", () => {
     const res = await inject(
       "GET",
       `/v1/clock/timesheet?userId=${workerId}&startDate=${today}&endDate=${today}`,
-      adminCookie,
+      adminCookie
     );
     expect(res.statusCode).toBe(200);
   });
@@ -350,7 +350,7 @@ describe("GET /v1/clock/timesheet", () => {
     const res = await inject(
       "GET",
       `/v1/clock/timesheet?userId=${workerId}&startDate=${today}&endDate=${today}`,
-      otherCookie,
+      otherCookie
     );
     expect(res.statusCode).toBe(403);
   });

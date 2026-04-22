@@ -83,7 +83,7 @@ export async function notificationRoutes(app: FastifyInstance) {
     const result = await notificationService.respondToInvite(
       session.user.id,
       id,
-      parsed.data.action,
+      parsed.data.action
     );
     if (result === "not-found") return reply.status(404).send({ error: "Not found" });
     if (result === "forbidden") return reply.status(403).send({ error: "Forbidden" });

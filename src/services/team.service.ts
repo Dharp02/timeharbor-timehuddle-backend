@@ -42,12 +42,10 @@ export class TeamService {
   /** Return all teams the user belongs to, sorted personal-first then by name. */
   async getTeamsForUser(userId: string): Promise<PublicTeam[]> {
     const teams = await teamsCollection().find({ members: userId }).toArray();
-    return teams
-      .map(toPublicTeam)
-      .sort((a, b) => {
-        if (a.isPersonal !== b.isPersonal) return a.isPersonal ? -1 : 1;
-        return a.name.localeCompare(b.name);
-      });
+    return teams.map(toPublicTeam).sort((a, b) => {
+      if (a.isPersonal !== b.isPersonal) return a.isPersonal ? -1 : 1;
+      return a.name.localeCompare(b.name);
+    });
   }
 
   /** Create a personal workspace if one doesn't exist; return it either way. */
@@ -72,7 +70,7 @@ export class TeamService {
   /** Create a new named team with the caller as sole member + admin. */
   async createTeam(
     userId: string,
-    data: { name: string; description?: string },
+    data: { name: string; description?: string }
   ): Promise<PublicTeam> {
     const code = generateTeamCode();
     const doc: Team & { _id: ObjectId } = {
@@ -92,14 +90,14 @@ export class TeamService {
   /** Join an existing team by code. */
   async joinByCode(
     userId: string,
-    teamCode: string,
+    teamCode: string
   ): Promise<PublicTeam | "not-found" | "already-member"> {
     const team = await teamsCollection().findOne({ code: teamCode.toUpperCase() });
     if (!team) return "not-found";
     if (team.members.includes(userId)) return "already-member";
     await teamsCollection().updateOne(
       { _id: team._id },
-      { $addToSet: { members: userId }, $set: { updatedAt: new Date() } },
+      { $addToSet: { members: userId }, $set: { updatedAt: new Date() } }
     );
     const updated = await teamsCollection().findOne({ _id: team._id });
     return toPublicTeam(updated!);
@@ -109,14 +107,14 @@ export class TeamService {
   async renameTeam(
     teamId: string,
     adminId: string,
-    newName: string,
+    newName: string
   ): Promise<PublicTeam | "not-found" | "forbidden"> {
     const team = await teamsCollection().findOne({ _id: new ObjectId(teamId) });
     if (!team) return "not-found";
     if (!team.admins.includes(adminId)) return "forbidden";
     await teamsCollection().updateOne(
       { _id: team._id },
-      { $set: { name: newName, updatedAt: new Date() } },
+      { $set: { name: newName, updatedAt: new Date() } }
     );
     const updated = await teamsCollection().findOne({ _id: team._id });
     return toPublicTeam(updated!);
@@ -138,7 +136,9 @@ export class TeamService {
 
     const allIds = Array.from(new Set([...team.members, ...team.admins]));
     const objectIds = allIds.map((id) => new ObjectId(id));
-    const users = await usersCollection().find({ _id: { $in: objectIds } }).toArray();
+    const users = await usersCollection()
+      .find({ _id: { $in: objectIds } })
+      .toArray();
     const byId = new Map(users.map((u) => [u._id.toString(), u]));
 
     return allIds.map((id) => {
@@ -151,7 +151,7 @@ export class TeamService {
   async inviteMember(
     teamId: string,
     inviterId: string,
-    email: string,
+    email: string
   ): Promise<"ok" | "not-found" | "forbidden" | "user-not-found" | "already-member"> {
     const team = await teamsCollection().findOne({ _id: new ObjectId(teamId), members: inviterId });
     if (!team) return "not-found";
@@ -163,7 +163,7 @@ export class TeamService {
 
     await teamsCollection().updateOne(
       { _id: team._id },
-      { $addToSet: { members: invitedId }, $set: { updatedAt: new Date() } },
+      { $addToSet: { members: invitedId }, $set: { updatedAt: new Date() } }
     );
     return "ok";
   }
@@ -172,8 +172,10 @@ export class TeamService {
   async removeMember(
     teamId: string,
     adminId: string,
-    targetUserId: string,
-  ): Promise<"ok" | "not-found" | "forbidden" | "not-member" | "last-admin" | "cannot-remove-self"> {
+    targetUserId: string
+  ): Promise<
+    "ok" | "not-found" | "forbidden" | "not-member" | "last-admin" | "cannot-remove-self"
+  > {
     const team = await teamsCollection().findOne({ _id: new ObjectId(teamId) });
     if (!team) return "not-found";
     if (!team.admins.includes(adminId)) return "forbidden";
@@ -187,7 +189,7 @@ export class TeamService {
       {
         $pull: { members: targetUserId, admins: targetUserId } as any,
         $set: { updatedAt: new Date() },
-      },
+      }
     );
     return "ok";
   }
@@ -197,7 +199,7 @@ export class TeamService {
     teamId: string,
     adminId: string,
     targetUserId: string,
-    role: "admin" | "member",
+    role: "admin" | "member"
   ): Promise<"ok" | "not-found" | "forbidden" | "not-member" | "last-admin"> {
     const team = await teamsCollection().findOne({ _id: new ObjectId(teamId) });
     if (!team) return "not-found";
@@ -207,14 +209,14 @@ export class TeamService {
     if (role === "admin") {
       await teamsCollection().updateOne(
         { _id: team._id },
-        { $addToSet: { admins: targetUserId }, $set: { updatedAt: new Date() } },
+        { $addToSet: { admins: targetUserId }, $set: { updatedAt: new Date() } }
       );
     } else {
       const remaining = team.admins.filter((id) => id !== targetUserId);
       if (remaining.length === 0) return "last-admin";
       await teamsCollection().updateOne(
         { _id: team._id },
-        { $set: { admins: remaining, updatedAt: new Date() } },
+        { $set: { admins: remaining, updatedAt: new Date() } }
       );
     }
     return "ok";
@@ -228,7 +230,7 @@ export class TeamService {
     teamId: string,
     adminId: string,
     targetUserId: string,
-    newPassword: string,
+    newPassword: string
   ): Promise<"ok" | "not-found" | "forbidden" | "not-member"> {
     const team = await teamsCollection().findOne({ _id: new ObjectId(teamId) });
     if (!team) return "not-found";
@@ -243,7 +245,7 @@ export class TeamService {
       .collection("account")
       .updateOne(
         { userId: targetUserId, providerId: "credential" },
-        { $set: { password: hashed } },
+        { $set: { password: hashed } }
       );
     if (result.matchedCount === 0) return "not-found";
     return "ok";

@@ -58,14 +58,14 @@ export class TicketService {
   async update(
     id: string,
     userId: string,
-    updates: Partial<Pick<Ticket, "title" | "github" | "accumulatedTime" | "status">>,
+    updates: Partial<Pick<Ticket, "title" | "github" | "accumulatedTime" | "status">>
   ): Promise<Ticket | OwnerError> {
     const ticket = await this.findById(id);
     if (!ticket) return "not-found";
     if (ticket.createdBy !== userId) return "forbidden";
     await ticketsCollection().updateOne(
       { _id: new ObjectId(id) },
-      { $set: { ...updates, updatedAt: new Date(), updatedBy: userId } },
+      { $set: { ...updates, updatedAt: new Date(), updatedBy: userId } }
     );
     return (await this.findById(id))!;
   }
@@ -77,7 +77,7 @@ export class TicketService {
     if (ticket.createdBy !== userId) return "forbidden";
     await ticketsCollection().updateOne(
       { _id: new ObjectId(id) },
-      { $set: { status: "deleted" as TicketStatus, updatedAt: new Date() } },
+      { $set: { status: "deleted" as TicketStatus, updatedAt: new Date() } }
     );
     return "ok";
   }
@@ -88,7 +88,7 @@ export class TicketService {
     if (ticket.createdBy !== userId) return "forbidden";
     await ticketsCollection().updateOne(
       { _id: new ObjectId(id) },
-      { $set: { startTimestamp: now } },
+      { $set: { startTimestamp: now } }
     );
     return (await this.findById(id))!;
   }
@@ -102,7 +102,7 @@ export class TicketService {
       const prev = ticket.accumulatedTime ?? 0;
       await ticketsCollection().updateOne(
         { _id: new ObjectId(id) },
-        { $set: { accumulatedTime: prev + elapsed }, $unset: { startTimestamp: "" } },
+        { $set: { accumulatedTime: prev + elapsed }, $unset: { startTimestamp: "" } }
       );
     }
     return (await this.findById(id))!;
@@ -112,7 +112,7 @@ export class TicketService {
     ticketIds: string[],
     teamId: string,
     status: TicketStatus,
-    adminId: string,
+    adminId: string
   ): Promise<number | "forbidden"> {
     if (!isValidId(teamId)) return "forbidden";
     const team = await teamsCollection().findOne({
@@ -129,7 +129,7 @@ export class TicketService {
     }
     const result = await ticketsCollection().updateMany(
       { _id: { $in: validIds }, teamId },
-      { $set },
+      { $set }
     );
     return result.modifiedCount;
   }
@@ -137,7 +137,7 @@ export class TicketService {
   async assign(
     id: string,
     adminId: string,
-    assignedToUserId: string | null,
+    assignedToUserId: string | null
   ): Promise<Ticket | AssignError> {
     const ticket = await this.findById(id);
     if (!ticket) return "not-found";
@@ -153,7 +153,7 @@ export class TicketService {
     }
     await ticketsCollection().updateOne(
       { _id: new ObjectId(id) },
-      { $set: { assignedTo: assignedToUserId, updatedAt: new Date(), updatedBy: adminId } },
+      { $set: { assignedTo: assignedToUserId, updatedAt: new Date(), updatedBy: adminId } }
     );
     return (await this.findById(id))!;
   }

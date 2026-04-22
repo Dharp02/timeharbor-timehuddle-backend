@@ -10,10 +10,7 @@ import { FastifyRequest, FastifyReply } from "fastify";
  * - Data is AES-256-GCM encrypted — useless without the key
  * - The server never decrypts anything
  */
-export async function requireSyncAuth(
-  req: FastifyRequest,
-  reply: FastifyReply
-) {
+export async function requireSyncAuth(req: FastifyRequest, reply: FastifyReply) {
   const uuid = req.headers["x-identity-uuid"] as string | undefined;
   if (uuid && isValidUUID(uuid)) {
     req.user = {

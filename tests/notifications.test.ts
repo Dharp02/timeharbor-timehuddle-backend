@@ -52,7 +52,7 @@ async function inject(
   method: string,
   url: string,
   cookie: string,
-  payload?: Record<string, unknown>,
+  payload?: Record<string, unknown>
 ) {
   return app.inject({
     method: method as any,
@@ -223,11 +223,7 @@ describe("GET /v1/notifications/:id/invite-preview", () => {
   });
 
   it("404 for unknown notification", async () => {
-    const res = await inject(
-      "GET",
-      `/v1/notifications/${new ObjectId()}/invite-preview`,
-      cookieA,
-    );
+    const res = await inject("GET", `/v1/notifications/${new ObjectId()}/invite-preview`, cookieA);
     expect(res.statusCode).toBe(404);
   });
 
@@ -236,18 +232,20 @@ describe("GET /v1/notifications/:id/invite-preview", () => {
     const res = await inject(
       "GET",
       `/v1/notifications/${n._id.toHexString()}/invite-preview`,
-      cookieA,
+      cookieA
     );
     expect(res.statusCode).toBe(400);
     await notificationsCollection().deleteOne({ _id: n._id });
   });
 
   it("403 for another user's notification", async () => {
-    const n = await seedNotification(userAId, { data: { type: "team-invite", teamId: new ObjectId().toHexString() } });
+    const n = await seedNotification(userAId, {
+      data: { type: "team-invite", teamId: new ObjectId().toHexString() },
+    });
     const res = await inject(
       "GET",
       `/v1/notifications/${n._id.toHexString()}/invite-preview`,
-      cookieB,
+      cookieB
     );
     expect(res.statusCode).toBe(403);
     await notificationsCollection().deleteOne({ _id: n._id });
@@ -265,7 +263,7 @@ describe("POST /v1/notifications/:id/invite-respond", () => {
       "POST",
       `/v1/notifications/${new ObjectId()}/invite-respond`,
       cookieA,
-      { action: "ignore" },
+      { action: "ignore" }
     );
     expect(res.statusCode).toBe(404);
   });
@@ -276,19 +274,21 @@ describe("POST /v1/notifications/:id/invite-respond", () => {
       "POST",
       `/v1/notifications/${n._id.toHexString()}/invite-respond`,
       cookieA,
-      { action: "maybe" },
+      { action: "maybe" }
     );
     expect(res.statusCode).toBe(400);
     await notificationsCollection().deleteOne({ _id: n._id });
   });
 
   it("ignore action deletes the notification", async () => {
-    const n = await seedNotification(userAId, { data: { type: "team-invite", teamId: new ObjectId().toHexString() } });
+    const n = await seedNotification(userAId, {
+      data: { type: "team-invite", teamId: new ObjectId().toHexString() },
+    });
     const res = await inject(
       "POST",
       `/v1/notifications/${n._id.toHexString()}/invite-respond`,
       cookieA,
-      { action: "ignore" },
+      { action: "ignore" }
     );
     expect(res.statusCode).toBe(200);
     const still = await notificationsCollection().findOne({ _id: n._id });

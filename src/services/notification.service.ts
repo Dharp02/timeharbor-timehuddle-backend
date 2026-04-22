@@ -1,9 +1,5 @@
 import { ObjectId } from "mongodb";
-import {
-  notificationsCollection,
-  teamsCollection,
-  usersCollection,
-} from "../models/index.js";
+import { notificationsCollection, teamsCollection, usersCollection } from "../models/index.js";
 import type { Notification, PublicNotification } from "../models/notification.model.js";
 
 // ─── SSE pub/sub ──────────────────────────────────────────────────────────────
@@ -74,37 +70,23 @@ class NotificationService {
   }
 
   /** Mark a single notification as read. Returns "not-found" or "forbidden". */
-  async markOneRead(
-    userId: string,
-    id: string,
-  ): Promise<"ok" | "not-found" | "forbidden"> {
+  async markOneRead(userId: string, id: string): Promise<"ok" | "not-found" | "forbidden"> {
     if (!ObjectId.isValid(id)) return "not-found";
     const doc = await notificationsCollection().findOne({ _id: new ObjectId(id) });
     if (!doc) return "not-found";
     if (doc.userId !== userId) return "forbidden";
-    await notificationsCollection().updateOne(
-      { _id: new ObjectId(id) },
-      { $set: { read: true } },
-    );
+    await notificationsCollection().updateOne({ _id: new ObjectId(id) }, { $set: { read: true } });
     return "ok";
   }
 
   /** Mark all notifications for the user as read. */
   async markAllRead(userId: string): Promise<void> {
-    await notificationsCollection().updateMany(
-      { userId, read: false },
-      { $set: { read: true } },
-    );
+    await notificationsCollection().updateMany({ userId, read: false }, { $set: { read: true } });
   }
 
   /** Delete notifications by IDs — only deletes those owned by userId. */
-  async deleteMany(
-    userId: string,
-    ids: string[],
-  ): Promise<{ deletedCount: number }> {
-    const validIds = ids
-      .filter((id) => ObjectId.isValid(id))
-      .map((id) => new ObjectId(id));
+  async deleteMany(userId: string, ids: string[]): Promise<{ deletedCount: number }> {
+    const validIds = ids.filter((id) => ObjectId.isValid(id)).map((id) => new ObjectId(id));
     if (validIds.length === 0) return { deletedCount: 0 };
     const result = await notificationsCollection().deleteMany({
       _id: { $in: validIds },
@@ -116,7 +98,7 @@ class NotificationService {
   /** Return a preview of a team-invite notification. */
   async getInvitePreview(
     userId: string,
-    notificationId: string,
+    notificationId: string
   ): Promise<
     | {
         notificationId: string;
@@ -161,7 +143,7 @@ class NotificationService {
           name: u.name ?? u.email?.split("@")[0] ?? "Unknown",
           email: u.email ?? "",
         },
-      ]),
+      ])
     );
 
     return {
@@ -170,12 +152,8 @@ class NotificationService {
       teamName: team.name,
       teamDescription: team.description ?? "",
       inviter: userMap.get(inviterId) ?? null,
-      members: team.members.map(
-        (id) => userMap.get(id) ?? { id, name: "Unknown", email: "" },
-      ),
-      admins: team.admins.map(
-        (id) => userMap.get(id) ?? { id, name: "Unknown", email: "" },
-      ),
+      members: team.members.map((id) => userMap.get(id) ?? { id, name: "Unknown", email: "" }),
+      admins: team.admins.map((id) => userMap.get(id) ?? { id, name: "Unknown", email: "" }),
       alreadyMember: team.members.includes(userId),
     };
   }
@@ -184,7 +162,7 @@ class NotificationService {
   async respondToInvite(
     userId: string,
     notificationId: string,
-    action: "join" | "ignore",
+    action: "join" | "ignore"
   ): Promise<"ok" | "not-found" | "forbidden" | "bad-request"> {
     if (!ObjectId.isValid(notificationId)) return "not-found";
     const n = await notificationsCollection().findOne({
@@ -206,7 +184,7 @@ class NotificationService {
       if (!team.members.includes(userId)) {
         await teamsCollection().updateOne(
           { _id: new ObjectId(teamId) },
-          { $push: { members: userId } },
+          { $push: { members: userId } }
         );
       }
     }

@@ -61,7 +61,7 @@ export async function clockRoutes(app: FastifyInstance) {
       const result = await clockService.start(userId, teamId);
       if (result === "forbidden") return reply.status(403).send({ error: "Forbidden" });
       return { event: result };
-    },
+    }
   );
 
   // POST /v1/clock/stop
@@ -91,7 +91,7 @@ export async function clockRoutes(app: FastifyInstance) {
       const result = await clockService.stop(userId, teamId, youtubeShortLink);
       if (result === "not-found") return reply.status(404).send({ error: "No active clock event" });
       return { event: result };
-    },
+    }
   );
 
   // POST /v1/clock/:id/ticket/start
@@ -121,7 +121,7 @@ export async function clockRoutes(app: FastifyInstance) {
       if (result === "not-found") return reply.status(404).send({ error: "Clock event not found" });
       if (result === "forbidden") return reply.status(403).send({ error: "Forbidden" });
       return { event: result };
-    },
+    }
   );
 
   // POST /v1/clock/:id/ticket/stop
@@ -150,7 +150,7 @@ export async function clockRoutes(app: FastifyInstance) {
       const result = await clockService.stopTicket(userId, clockEventId, ticketId, now);
       if (result === "not-found") return reply.status(404).send({ error: "Clock event not found" });
       return { event: result };
-    },
+    }
   );
 
   // PUT /v1/clock/:id/youtube
@@ -176,7 +176,7 @@ export async function clockRoutes(app: FastifyInstance) {
       const result = await clockService.updateYoutubeLink(userId, clockEventId, youtubeShortLink);
       if (result === "not-found") return reply.status(404).send({ error: "Clock event not found" });
       return { event: result };
-    },
+    }
   );
 
   // PUT /v1/clock/:id/times
@@ -207,7 +207,7 @@ export async function clockRoutes(app: FastifyInstance) {
       if (result === "invalid-range")
         return reply.status(422).send({ error: "Clock-out cannot be earlier than clock-in" });
       return { event: result };
-    },
+    }
   );
 
   // GET /v1/clock/timesheet
@@ -238,7 +238,7 @@ export async function clockRoutes(app: FastifyInstance) {
       const result = await clockService.getTimesheet(requesterId, userId, startDate, endDate);
       if (result === "forbidden") return reply.status(403).send({ error: "Forbidden" });
       return result;
-    },
+    }
   );
 
   // GET /v1/clock/active — current user's active event (any team)
@@ -260,7 +260,7 @@ export async function clockRoutes(app: FastifyInstance) {
       const { id: userId } = (req as any).user;
       const event = await clockService.getActiveForUser(userId);
       return { event: event ? toPublicClockEvent(event) : null };
-    },
+    }
   );
 
   // GET /v1/clock/events — all events for current user
@@ -274,7 +274,7 @@ export async function clockRoutes(app: FastifyInstance) {
       const { id: userId } = (req as any).user;
       const events = await clockService.getForUser(userId);
       return { events: events.map(toPublicClockEvent) };
-    },
+    }
   );
 
   // GET /v1/clock/live?teamIds=id1,id2 — SSE stream for live team clock state
@@ -328,9 +328,7 @@ export async function clockRoutes(app: FastifyInstance) {
       // Subscribe to future broadcasts
       const unsub = subscribeSse((teamId, event) => {
         if (!teamIds.includes(teamId)) return;
-        reply.raw.write(
-          `data: ${JSON.stringify({ type: "update", teamId, event })}\n\n`,
-        );
+        reply.raw.write(`data: ${JSON.stringify({ type: "update", teamId, event })}\n\n`);
       });
 
       // Keepalive ping every 25s
@@ -342,6 +340,6 @@ export async function clockRoutes(app: FastifyInstance) {
         unsub();
         clearInterval(ping);
       });
-    },
+    }
   );
 }

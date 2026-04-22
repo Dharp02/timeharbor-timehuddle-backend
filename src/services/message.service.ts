@@ -49,7 +49,7 @@ class MessageService {
     requesterId: string,
     teamId: string,
     adminId: string,
-    memberId: string,
+    memberId: string
   ): Promise<PublicMessage[] | "forbidden"> {
     if (requesterId !== adminId && requesterId !== memberId) return "forbidden";
     const threadId = buildThreadId(teamId, adminId, memberId);
@@ -69,7 +69,7 @@ class MessageService {
       text: string;
       adminId: string;
       ticketId?: string;
-    },
+    }
   ): Promise<PublicMessage | "forbidden" | "not-found"> {
     const { teamId, toUserId, text, adminId, ticketId } = data;
 
@@ -90,8 +90,7 @@ class MessageService {
     if (!allMembers.includes(memberId)) return "forbidden";
 
     const sender = await usersCollection().findOne({ _id: new ObjectId(senderId) });
-    const senderName =
-      sender?.name ?? sender?.email?.split("@")[0] ?? "Unknown";
+    const senderName = sender?.name ?? sender?.email?.split("@")[0] ?? "Unknown";
 
     const doc: Message = {
       _id: new ObjectId(),

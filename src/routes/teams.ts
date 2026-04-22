@@ -50,7 +50,7 @@ export async function teamRoutes(app: FastifyInstance) {
       const userId = (req as any).user.id as string;
       const teams = await teamService.getTeamsForUser(userId);
       return reply.send({ teams });
-    },
+    }
   );
 
   // ── POST /v1/teams/ensure-personal ────────────────────────────────────────
@@ -68,7 +68,7 @@ export async function teamRoutes(app: FastifyInstance) {
       const userId = (req as any).user.id as string;
       const team = await teamService.ensurePersonalWorkspace(userId);
       return reply.send({ team });
-    },
+    }
   );
 
   // ── POST /v1/teams/join ───────────────────────────────────────────────────
@@ -92,10 +92,9 @@ export async function teamRoutes(app: FastifyInstance) {
       const { teamCode } = req.body as { teamCode: string };
       const result = await teamService.joinByCode(userId, teamCode);
       if (result === "not-found") return reply.status(404).send({ error: "Team not found" });
-      if (result === "already-member")
-        return reply.status(409).send({ error: "Already a member" });
+      if (result === "already-member") return reply.status(409).send({ error: "Already a member" });
       return reply.send({ team: result });
-    },
+    }
   );
 
   // ── POST /v1/teams ────────────────────────────────────────────────────────
@@ -122,7 +121,7 @@ export async function teamRoutes(app: FastifyInstance) {
       const { name, description } = req.body as { name: string; description?: string };
       const team = await teamService.createTeam(userId, { name, description });
       return reply.status(201).send({ team });
-    },
+    }
   );
 
   // ── PUT /v1/teams/:id/name ─────────────────────────────────────────────────
@@ -150,7 +149,7 @@ export async function teamRoutes(app: FastifyInstance) {
       if (result === "not-found") return reply.status(404).send({ error: "Team not found" });
       if (result === "forbidden") return reply.status(403).send({ error: "Admin only" });
       return reply.send({ team: result });
-    },
+    }
   );
 
   // ── DELETE /v1/teams/:id ──────────────────────────────────────────────────
@@ -172,7 +171,7 @@ export async function teamRoutes(app: FastifyInstance) {
       if (result === "not-found") return reply.status(404).send({ error: "Team not found" });
       if (result === "forbidden") return reply.status(403).send({ error: "Admin only" });
       return reply.send({ ok: true });
-    },
+    }
   );
 
   // ── GET /v1/teams/:id/members ─────────────────────────────────────────────
@@ -198,7 +197,7 @@ export async function teamRoutes(app: FastifyInstance) {
       const result = await teamService.getMembers(id, userId);
       if (result === "not-found") return reply.status(404).send({ error: "Team not found" });
       return reply.send({ members: result });
-    },
+    }
   );
 
   // ── POST /v1/teams/:id/invite ─────────────────────────────────────────────
@@ -229,10 +228,9 @@ export async function teamRoutes(app: FastifyInstance) {
         return reply
           .status(404)
           .send({ error: "No account found with that email. Ask them to sign up first." });
-      if (result === "already-member")
-        return reply.status(409).send({ error: "Already a member" });
+      if (result === "already-member") return reply.status(409).send({ error: "Already a member" });
       return reply.send({ ok: true });
-    },
+    }
   );
 
   // ── DELETE /v1/teams/:id/members/:userId ──────────────────────────────────
@@ -258,12 +256,11 @@ export async function teamRoutes(app: FastifyInstance) {
       if (result === "forbidden") return reply.status(403).send({ error: "Admin only" });
       if (result === "cannot-remove-self")
         return reply.status(400).send({ error: "Cannot remove yourself" });
-      if (result === "not-member")
-        return reply.status(400).send({ error: "User is not a member" });
+      if (result === "not-member") return reply.status(400).send({ error: "User is not a member" });
       if (result === "last-admin")
         return reply.status(400).send({ error: "Promote another admin first" });
       return reply.send({ ok: true });
-    },
+    }
   );
 
   // ── PUT /v1/teams/:id/members/:userId/role ────────────────────────────────
@@ -293,12 +290,11 @@ export async function teamRoutes(app: FastifyInstance) {
       const result = await teamService.setMemberRole(id, adminId, userId, role);
       if (result === "not-found") return reply.status(404).send({ error: "Team not found" });
       if (result === "forbidden") return reply.status(403).send({ error: "Admin only" });
-      if (result === "not-member")
-        return reply.status(400).send({ error: "User is not a member" });
+      if (result === "not-member") return reply.status(400).send({ error: "User is not a member" });
       if (result === "last-admin")
         return reply.status(400).send({ error: "Promote another admin first" });
       return reply.send({ ok: true });
-    },
+    }
   );
 
   // ── PUT /v1/teams/:id/members/:userId/password ────────────────────────────
@@ -328,9 +324,8 @@ export async function teamRoutes(app: FastifyInstance) {
       const result = await teamService.setMemberPassword(id, adminId, userId, newPassword);
       if (result === "not-found") return reply.status(404).send({ error: "Not found" });
       if (result === "forbidden") return reply.status(403).send({ error: "Admin only" });
-      if (result === "not-member")
-        return reply.status(400).send({ error: "User is not a member" });
+      if (result === "not-member") return reply.status(400).send({ error: "User is not a member" });
       return reply.send({ ok: true });
-    },
+    }
   );
 }
