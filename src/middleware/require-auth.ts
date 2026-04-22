@@ -1,5 +1,7 @@
 import { FastifyReply, FastifyRequest } from "fastify";
 import { randomUUID } from "crypto";
+import { auth } from "../lib/auth.js";
+import { fromNodeHeaders } from "better-auth/node";
 
 export type AppUser = {
   id: string;
