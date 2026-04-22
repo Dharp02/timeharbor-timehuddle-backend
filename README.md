@@ -6,14 +6,12 @@ Backend monorepo for [TimeharborApp](../timeharbourapp/README.md) — a Fastify 
 
 ```
 timeharbor-timehuddle-backend/
-├── apps/
-│   └── api/                       # Fastify API server
-│       └── src/
-│           ├── server.ts          # Entry point
-│           ├── routes/            # Route definitions
-│           ├── controllers/       # Request handlers
-│           ├── models/            # MongoDB collection accessors
-│           └── middleware/        # Auth, error handling
+├── src/                           # Fastify API server
+│   ├── server.ts                  # Entry point
+│   ├── routes/                    # Route definitions
+│   ├── controllers/               # Request handlers
+│   ├── models/                    # MongoDB collection accessors
+│   └── middleware/                # Auth, error handling
 └── packages/
     └── time-engine/               # @timeharbor/time-engine
         └── src/
@@ -36,7 +34,6 @@ timeharbor-timehuddle-backend/
 ## Getting Started
 
 ```bash
-cd apps/api
 npm install
 ```
 
@@ -81,7 +78,6 @@ The server cannot decrypt the op-log payloads (AES-256-GCM, client-side keys).
 ## Build
 
 ```bash
-cd apps/api
 npm run build    # Compiles to dist/
 node dist/server.js
 ```
