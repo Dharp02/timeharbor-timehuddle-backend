@@ -2,7 +2,7 @@ import "dotenv/config";
 import { fileURLToPath } from "url";
 import path from "path";
 import fs from "fs";
-import Fastify from "fastify";
+import Fastify, { type FastifyInstance } from "fastify";
 import cors from "@fastify/cors";
 import multipart from "@fastify/multipart";
 import fastifyStatic from "@fastify/static";
@@ -10,6 +10,7 @@ import swagger from "@fastify/swagger";
 import swaggerUi from "@fastify/swagger-ui";
 import { connectDB } from "./lib/db.js";
 import { ensureIndexes } from "./lib/ensure-indexes.js";
+import { appContext } from "./middleware/app-context.js";
 import { healthRoutes } from "./routes/health.js";
 import { userRoutes } from "./routes/users.js";
 import { ticketRoutes } from "./routes/tickets.js";
@@ -18,26 +19,6 @@ import { clockRoutes } from "./routes/clock.js";
 import { messageRoutes } from "./routes/messages.js";
 import { notificationRoutes } from "./routes/notifications.js";
 
-const app = Fastify({ logger: true, ignoreTrailingSlash: true });
-
-async function bootstrap() {
-  await connectDB();
-  await ensureIndexes();
-
-  // Ensure uploads directory exists
-  const __dirname = path.dirname(fileURLToPath(import.meta.url));
-  const uploadsDir = path.resolve(__dirname, "..", "uploads", "avatars");
-  fs.mkdirSync(uploadsDir, { recursive: true });
-
-  // Multipart file uploads (5MB limit)
-  await app.register(multipart, { limits: { fileSize: 5 * 1024 * 1024 } });
-
-  // Serve uploaded files at /uploads/*
-  await app.register(fastifyStatic, {
-    root: path.resolve(__dirname, "..", "uploads"),
-    prefix: "/uploads/",
-    decorateReply: false,
-  });
 export async function buildApp(opts: { logger?: boolean } = {}): Promise<FastifyInstance> {
   const app = Fastify({ logger: opts.logger ?? true });
 
