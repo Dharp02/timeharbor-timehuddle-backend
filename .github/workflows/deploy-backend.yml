@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - timeharbor
 
 jobs:
   deploy:
@@ -17,7 +16,7 @@ jobs:
           - env: DEV
             host_secret: DEV_BACKEND_HOST
             port: 2047
-            branch: timeharbor
+            branch: main
           - env: PROD
             host_secret: PROD_BACKEND_HOST
             port: 2030
@@ -39,7 +38,7 @@ jobs:
               ${{ secrets.DEPLOY_SSH_USER }}@${{ secrets[matrix.host_secret] }} << 'EOF'
             set -e
 
-            REPO_DIR="/home/pdharamkar/timeharbor-timehuddle-backend"
+            REPO_DIR="$HOME/timeharbor-timehuddle-backend"
 
             # Fix git safe directory (sudo npm creates root-owned files)
             git config --global --add safe.directory "$REPO_DIR" 2>/dev/null || true
@@ -51,20 +50,11 @@ jobs:
 
             cd "$REPO_DIR"
 
-            echo "📦 Stashing local changes..."
-            STASHED=false
-            if ! git diff --quiet || ! git diff --cached --quiet; then
-              git stash push -m "deploy-auto-stash"
-              STASHED=true
-            fi
 
-            echo "🛑 Stopping PM2 backend..."
-            sudo pm2 stop timeharbor-backend 2>/dev/null || true
-
-            echo "🔄 Switching to ${{ matrix.branch }} and pulling latest code..."
+            echo "🔄 Fetching latest code on ${{ matrix.branch }}..."
             git fetch origin
             git checkout ${{ matrix.branch }}
-            git pull origin ${{ matrix.branch }}
+            git reset --hard origin/${{ matrix.branch }}
 
             echo "⚙️  Installing dependencies..."
             sudo npm install
@@ -76,11 +66,6 @@ jobs:
             sudo pm2 delete timeharbor-backend 2>/dev/null || true
             sudo pm2 start dist/server.js --name timeharbor-backend --cwd "$REPO_DIR"
             sudo pm2 save
-
-            if [ "$STASHED" = true ]; then
-              echo "📦 Restoring stashed changes..."
-              git stash pop || echo "⚠️  Stash pop had conflicts, manual resolution needed"
-            fi
 
             echo "✅ ${{ matrix.env }} backend deployment completed!"
             sudo pm2 status
