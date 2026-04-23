@@ -6,14 +6,12 @@ Backend monorepo for [TimeharborApp](../timeharbourapp/README.md) — a Fastify 
 
 ```
 timeharbor-timehuddle-backend/
-├── apps/
-│   └── api/                       # Fastify API server
-│       └── src/
-│           ├── server.ts          # Entry point
-│           ├── routes/            # Route definitions
-│           ├── controllers/       # Request handlers
-│           ├── models/            # MongoDB collection accessors
-│           └── middleware/        # Auth, error handling
+├── src/                           # Fastify API server
+│   ├── server.ts                  # Entry point
+│   ├── routes/                    # Route definitions
+│   ├── controllers/               # Request handlers
+│   ├── models/                    # MongoDB collection accessors
+│   └── middleware/                # Auth, error handling
 └── packages/
     └── time-engine/               # @timeharbor/time-engine
         └── src/
@@ -30,31 +28,32 @@ timeharbor-timehuddle-backend/
 | Framework | Fastify v5 |
 | Database | MongoDB (native driver, no Mongoose) |
 | Auth | Better Auth with MongoDB adapter |
-| Real-time | @fastify/websocket |
+| Real-time | Server-Sent Events (SSE) for live streams |
 | API docs | @fastify/swagger (auto-generated at `/docs`) |
 
 ## Getting Started
 
 ```bash
-cd apps/api
 npm install
 ```
 
 Create a `.env` file:
 
 ```env
-PORT=3001
+PORT=4000
 NODE_ENV=development
-DATABASE_URL=mongodb://localhost:27017/timeharbor
+MONGODB_URI=mongodb://localhost:27017/timeharbor
 BETTER_AUTH_SECRET=your-secret
-FRONTEND_URL=http://localhost:3000
+BETTER_AUTH_URL=http://localhost:4000
+TRUSTED_ORIGINS=http://localhost:3000
+APP_URL=http://localhost:3000
 ```
 
 ```bash
 npm run dev
 ```
 
-API available at `http://localhost:3001`.
+API available at `http://localhost:4000`.
 
 ## Shared Calculation Engine
 
@@ -64,24 +63,9 @@ API available at `http://localhost:3001`.
 - All timestamps are UTC epoch milliseconds
 - All functions are pure — no side effects, no `Date.now()`
 
-## Encrypted Op-Log Sync
-
-The server acts as a **zero-knowledge relay** for client sync:
-
-| Endpoint | Method | Purpose |
-|----------|--------|---------|
-| `/sync/oplog` | POST | Receive encrypted op-log batches from client |
-| `/sync/oplog` | GET | Return encrypted batches for other devices |
-| `/sync/oplog/compact` | DELETE | Remove old consumed batches |
-| `/sync/oplog/purge` | DELETE | Purge all sync data |
-| `/sync/oplog/status` | GET | Check if user has sync data |
-
-The server cannot decrypt the op-log payloads (AES-256-GCM, client-side keys).
-
 ## Build
 
 ```bash
-cd apps/api
 npm run build    # Compiles to dist/
 node dist/server.js
 ```
