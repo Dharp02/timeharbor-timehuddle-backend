@@ -15,11 +15,11 @@ jobs:
         include:
           - env: DEV
             host_secret: DEV_BACKEND_HOST
-            port: 2047
+            port: 2063
             branch: main
           - env: PROD
             host_secret: PROD_BACKEND_HOST
-            port: 2030
+            port: 2065
             branch: main
 
     steps:
