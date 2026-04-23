@@ -10,12 +10,17 @@ export const auth = betterAuth({
     enabled: true,
     requireEmailVerification: false,
     sendResetPassword: async ({ user, url, token }) => {
-      const resetUrl =
+      const webUrl =
         url ?? `${process.env.APP_URL ?? "http://localhost:3000"}/reset-password?token=${token}`;
+      // Include a deep link so tapping from a mobile mail client opens the native app.
+      const deepLinkUrl = `timehuddle://reset?token=${token}`;
       await sendEmail({
         to: user.email,
         subject: "Reset your password",
-        html: `<p>You requested a password reset.</p><p><a href="${resetUrl}">Click here to reset your password</a></p><p>If you did not request this, please ignore this email.</p>`,
+        html: `<p>You requested a password reset.</p>
+<p><a href="${webUrl}">Click here to reset your password</a></p>
+<p>Opening on mobile? <a href="${deepLinkUrl}">Tap here to reset in the TimeHuddle app</a></p>
+<p>If you did not request this, please ignore this email.</p>`,
       });
     },
   },
@@ -29,7 +34,13 @@ export const auth = betterAuth({
   // Locally: BETTER_AUTH_URL=http://localhost:8080 (the proxy)
   baseURL: process.env.BETTER_AUTH_URL || "http://localhost:8080",
 
-  trustedOrigins: process.env.TRUSTED_ORIGINS ? process.env.TRUSTED_ORIGINS.split(",") : [],
+  trustedOrigins: [
+    ...(process.env.TRUSTED_ORIGINS ? process.env.TRUSTED_ORIGINS.split(",").map((o) => o.trim()) : []),
+    // Capacitor native WebViews always use these origins.
+    "capacitor://localhost",
+    "ionic://localhost",
+    "http://localhost",
+  ],
 
   session: {
     expiresIn: 60 * 60 * 24 * 7,

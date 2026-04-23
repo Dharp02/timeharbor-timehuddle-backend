@@ -5,6 +5,7 @@ import type { Ticket } from "./ticket.model.js";
 import type { ClockEvent } from "./clock.model.js";
 import type { Message } from "./message.model.js";
 import type { Notification } from "./notification.model.js";
+import type { PushToken } from "./push-token.model.js";
 
 // Collection accessor — better-auth's MongoDB adapter uses "user" (singular)
 export function usersCollection() {
@@ -34,4 +35,9 @@ export function messagesCollection() {
 // Notifications
 export function notificationsCollection() {
   return getDB().collection<Notification>("notifications");
+}
+
+// Push subscription tokens (web push + native APNs/FCM)
+export function pushTokensCollection() {
+  return getDB().collection<PushToken>("push_tokens");
 }
