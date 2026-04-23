@@ -17,10 +17,12 @@ jobs:
             host_secret: DEV_BACKEND_HOST
             port: 2063
             branch: main
+            health_url_secret: DEV_BACKEND_HEALTH_URL
           - env: PROD
             host_secret: PROD_BACKEND_HOST
             port: 2065
             branch: main
+            health_url_secret: PROD_BACKEND_HEALTH_URL
 
     steps:
       - name: Setup SSH
@@ -76,3 +78,11 @@ jobs:
       - name: Deployment Status
         if: failure()
         run: echo "❌ ${{ matrix.env }} backend deployment failed!"
+
+      - name: Verify ${{ matrix.env }} health
+        run: |
+          sleep 8
+          BODY=$(curl -s ${{ secrets[matrix.health_url_secret] }})
+          echo "Response: $BODY"
+          echo "$BODY" | grep -q '"status":"ok"' || { echo "${{ matrix.env }} backend health check failed"; exit 1; }
+          echo "${{ matrix.env }} backend is healthy"
