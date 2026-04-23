@@ -59,12 +59,9 @@ jobs:
             echo "⚙️  Installing dependencies..."
             sudo npm install
 
-            echo "🏗️  Building backend..."
-            sudo npm run build
-
             echo "🚀 Restarting PM2 backend..."
             sudo pm2 delete timeharbor-backend 2>/dev/null || true
-            sudo pm2 start dist/server.js --name timeharbor-backend --cwd "$REPO_DIR"
+            sudo pm2 start node_modules/.bin/tsx --name timeharbor-backend --cwd "$REPO_DIR" -- src/server.ts
             sudo pm2 save
 
             echo "✅ ${{ matrix.env }} backend deployment completed!"
