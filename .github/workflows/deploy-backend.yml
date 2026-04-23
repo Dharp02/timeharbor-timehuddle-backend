@@ -59,6 +59,12 @@ jobs:
             echo "⚙️  Installing dependencies..."
             sudo npm install
 
+            # Restore .env from legacy location if not present at repo root
+            if [ ! -f "$REPO_DIR/.env" ] && [ -f "$REPO_DIR/apps/api/.env" ]; then
+              echo "📋 Copying .env from apps/api/ to repo root..."
+              cp "$REPO_DIR/apps/api/.env" "$REPO_DIR/.env"
+            fi
+
             echo "🚀 Restarting PM2 backend..."
             sudo pm2 delete timeharbor-backend 2>/dev/null || true
             sudo pm2 start node_modules/.bin/tsx --name timeharbor-backend --cwd "$REPO_DIR" -- src/server.ts
