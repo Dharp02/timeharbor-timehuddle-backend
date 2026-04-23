@@ -66,8 +66,7 @@ jobs:
             fi
 
             echo "🚀 Restarting PM2 backend..."
-            sudo pm2 delete timeharbor-backend 2>/dev/null || true
-            sudo pm2 start node_modules/.bin/tsx --name timeharbor-backend --cwd "$REPO_DIR" -- src/server.ts
+            sudo pm2 restart all
             sudo pm2 save
 
             echo "✅ ${{ matrix.env }} backend deployment completed!"
