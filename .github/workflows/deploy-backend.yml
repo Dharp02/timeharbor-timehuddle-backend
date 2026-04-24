@@ -18,11 +18,21 @@ jobs:
             port: 2063
             branch: main
             health_url_secret: DEV_BACKEND_HEALTH_URL
+            npm_install_cmd: "npm install --no-audit --no-fund"
+            pm2_stop_cmd: "pm2 stop all 2>/dev/null || true"
+            pm2_start_cmd: "pm2 start ecosystem.config.cjs 2>/dev/null || pm2 restart timeharbor"
+            pm2_save_cmd: "pm2 save"
+            pm2_status_cmd: "pm2 status"
           - env: PROD
             host_secret: PROD_BACKEND_HOST
             port: 2065
             branch: main
             health_url_secret: PROD_BACKEND_HEALTH_URL
+            npm_install_cmd: "sudo npm install --no-audit --no-fund"
+            pm2_stop_cmd: "sudo pm2 stop timecore-api 2>/dev/null || true"
+            pm2_start_cmd: "sudo pm2 restart timecore-api"
+            pm2_save_cmd: "sudo pm2 save"
+            pm2_status_cmd: "sudo pm2 status"
 
     steps:
       - name: Setup SSH
@@ -58,15 +68,18 @@ jobs:
             git checkout ${{ matrix.branch }}
             git reset --hard origin/${{ matrix.branch }}
 
-            echo "⚙️  Installing dependencies..."
-            sudo npm install
+            echo "⏹️  Stopping PM2..."
+            ${{ matrix.pm2_stop_cmd }}
 
-            echo "🚀 Restarting PM2 backend..."
-            sudo pm2 restart all
-            sudo pm2 save
+            echo "⚙️  Installing dependencies..."
+            ${{ matrix.npm_install_cmd }}
+
+            echo "🚀 Starting/restarting PM2 backend..."
+            ${{ matrix.pm2_start_cmd }}
+            ${{ matrix.pm2_save_cmd }}
 
             echo "✅ ${{ matrix.env }} backend deployment completed!"
-            sudo pm2 status
+            ${{ matrix.pm2_status_cmd }}
           EOF
 
       - name: Deployment Status
