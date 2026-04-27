@@ -6,6 +6,8 @@ import type { ClockEvent } from "./clock.model.js";
 import type { Message } from "./message.model.js";
 import type { Notification } from "./notification.model.js";
 import type { Profile } from "./profile.model.js";
+import type { EncryptedOpLogBatch } from "./encrypted-oplog.model.js";
+import type { RecoveryKeyStatus } from "./recovery-key-status.model.js";
 
 // Collection accessor — better-auth's MongoDB adapter uses "user" (singular)
 export function usersCollection() {
@@ -40,4 +42,14 @@ export function notificationsCollection() {
 // Profiles
 export function profilesCollection() {
   return getDB().collection<Profile>("profiles");
+}
+
+// Encrypted op-log batches
+export function encryptedOpLogsCollection() {
+  return getDB().collection<EncryptedOpLogBatch>("encryptedOpLogs");
+}
+
+// Recovery key status
+export function recoveryKeyStatusCollection() {
+  return getDB().collection<RecoveryKeyStatus>("recoveryKeyStatus");
 }
