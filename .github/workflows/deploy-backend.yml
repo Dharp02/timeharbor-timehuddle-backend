@@ -17,12 +17,12 @@ jobs:
             host_secret: DEV_BACKEND_HOST
             port: 2063
             branch: main
-            health_url_secret: DEV_BACKEND_HEALTH_URL
+            health_url: https://timehubbackenddev.os.mieweb.org/health
           - env: PROD
             host_secret: PROD_BACKEND_HOST
             port: 2065
             branch: main
-            health_url_secret: PROD_BACKEND_HEALTH_URL
+            health_url: https://timehubbackend.os.mieweb.org/health
 
     steps:
       - name: Setup SSH
@@ -65,6 +65,7 @@ jobs:
             sudo pm2 kill 2>/dev/null || true
 
             echo "🚀 Starting PM2 backend..."
+            cd "$REPO_DIR"
             sudo pm2 start src/server.ts \
               --name "timeharbor-api" \
               --interpreter "$REPO_DIR/node_modules/.bin/tsx" \
@@ -82,10 +83,14 @@ jobs:
 
       - name: Verify ${{ matrix.env }} health
         run: |
+          HEALTH_HOST=$(echo "${{ matrix.health_url }}" | sed 's|https\?://||' | cut -d'/' -f1)
+          echo "Pinging $HEALTH_HOST..."
+          ping -c 3 "$HEALTH_HOST" || echo "Ping failed (may be blocked), continuing..."
+
           echo "Waiting for server to finish startup..."
           for i in $(seq 1 10); do
             sleep 10
-            BODY=$(curl -s ${{ secrets[matrix.health_url_secret] }})
+            BODY=$(curl -s "${{ matrix.health_url }}")
             echo "Attempt $i — Response: $BODY"
             if echo "$BODY" | grep -q '"status":"ok"'; then
               echo "${{ matrix.env }} backend is healthy"
