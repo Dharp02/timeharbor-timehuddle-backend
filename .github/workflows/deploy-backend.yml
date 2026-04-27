@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - timeharbor
 
 jobs:
   deploy:
@@ -16,12 +15,14 @@ jobs:
         include:
           - env: DEV
             host_secret: DEV_BACKEND_HOST
-            port: 2047
-            branch: timeharbor
+            port: 2063
+            branch: main
+            health_url_secret: DEV_BACKEND_HEALTH_URL
           - env: PROD
             host_secret: PROD_BACKEND_HOST
-            port: 2030
+            port: 2065
             branch: main
+            health_url_secret: PROD_BACKEND_HEALTH_URL
 
     steps:
       - name: Setup SSH
@@ -39,7 +40,7 @@ jobs:
               ${{ secrets.DEPLOY_SSH_USER }}@${{ secrets[matrix.host_secret] }} << 'EOF'
             set -e
 
-            REPO_DIR="/home/pdharamkar/timeharbor-timehuddle-backend"
+            REPO_DIR="$HOME/timeharbor-timehuddle-backend"
 
             # Fix git safe directory (sudo npm creates root-owned files)
             git config --global --add safe.directory "$REPO_DIR" 2>/dev/null || true
@@ -51,38 +52,21 @@ jobs:
 
             cd "$REPO_DIR"
 
-            echo "📦 Stashing local changes..."
-            STASHED=false
-            if ! git diff --quiet || ! git diff --cached --quiet; then
-              git stash push -m "deploy-auto-stash"
-              STASHED=true
-            fi
 
-            echo "🛑 Stopping PM2 backend..."
-            sudo pm2 stop timeharbor-backend 2>/dev/null || true
-
-            echo "🔄 Switching to ${{ matrix.branch }} and pulling latest code..."
+            echo "🔄 Fetching latest code on ${{ matrix.branch }}..."
             git fetch origin
             git checkout ${{ matrix.branch }}
-            git pull origin ${{ matrix.branch }}
+            git reset --hard origin/${{ matrix.branch }}
+
+            echo "⏹️  Stopping PM2..."
+            sudo pm2 stop all 2>/dev/null || true
 
             echo "⚙️  Installing dependencies..."
-            cd apps/api
-            sudo npm install
-
-            echo "🏗️  Building backend..."
-            sudo npm run build
-            cd ../..
+            sudo npm install --no-audit --no-fund
 
             echo "🚀 Restarting PM2 backend..."
-            sudo pm2 delete timeharbor-backend 2>/dev/null || true
-            sudo pm2 start dist/server.js --name timeharbor-backend --cwd "$REPO_DIR/apps/api"
+            sudo pm2 restart all
             sudo pm2 save
-
-            if [ "$STASHED" = true ]; then
-              echo "📦 Restoring stashed changes..."
-              git stash pop || echo "⚠️  Stash pop had conflicts, manual resolution needed"
-            fi
 
             echo "✅ ${{ matrix.env }} backend deployment completed!"
             sudo pm2 status
@@ -91,3 +75,11 @@ jobs:
       - name: Deployment Status
         if: failure()
         run: echo "❌ ${{ matrix.env }} backend deployment failed!"
+
+      - name: Verify ${{ matrix.env }} health
+        run: |
+          sleep 8
+          BODY=$(curl -s ${{ secrets[matrix.health_url_secret] }})
+          echo "Response: $BODY"
+          echo "$BODY" | grep -q '"status":"ok"' || { echo "${{ matrix.env }} backend health check failed"; exit 1; }
+          echo "${{ matrix.env }} backend is healthy"
