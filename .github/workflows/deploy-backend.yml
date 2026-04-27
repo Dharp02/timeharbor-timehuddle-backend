@@ -15,12 +15,12 @@ jobs:
         include:
           - env: DEV
             host_secret: DEV_BACKEND_HOST
-            port: 2063
+            port: 2047
             branch: main
             health_url: https://timehubbackenddev.os.mieweb.org/health
           - env: PROD
             host_secret: PROD_BACKEND_HOST
-            port: 2065
+            port: 2030
             branch: main
             health_url: https://timehubbackend.os.mieweb.org/health
 
@@ -60,16 +60,17 @@ jobs:
             echo "⚙️  Installing dependencies..."
             sudo npm install --no-audit --no-fund
 
-            echo "⏹️  Killing PM2 daemon (clean slate)..."
-            sudo pm2 kill 2>/dev/null || true
-
-            echo "🚀 Starting PM2 backend..."
+            echo "🔄 Restarting PM2 backend..."
             cd "$REPO_DIR"
-            sudo pm2 start src/server.ts \
-              --name "timeharbor-api" \
-              --interpreter "$REPO_DIR/node_modules/.bin/tsx" \
-              --cwd "$REPO_DIR" \
-              --update-env
+            if sudo pm2 describe timeharbor-backend > /dev/null 2>&1; then
+              sudo pm2 restart timeharbor-backend --update-env
+            else
+              sudo pm2 start src/server.ts \
+                --name "timeharbor-backend" \
+                --interpreter "$REPO_DIR/node_modules/.bin/tsx" \
+                --cwd "$REPO_DIR" \
+                --update-env
+            fi
             sudo pm2 save
 
             echo "✅ ${{ matrix.env }} backend deployment completed!"
