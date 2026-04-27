@@ -17,12 +17,12 @@ jobs:
             host_secret: DEV_BACKEND_HOST
             port: 2063
             branch: main
-            health_url_secret: DEV_BACKEND_HEALTH_URL
+            health_url: https://timehubbackenddev.os.mieweb.org/health
           - env: PROD
             host_secret: PROD_BACKEND_HOST
             port: 2065
             branch: main
-            health_url_secret: PROD_BACKEND_HEALTH_URL
+            health_url: https://timehubbackend.os.mieweb.org/health
 
     steps:
       - name: Setup SSH
@@ -58,15 +58,19 @@ jobs:
             git checkout ${{ matrix.branch }}
             git reset --hard origin/${{ matrix.branch }}
 
-            echo "⏹️  Stopping PM2..."
-            sudo pm2 stop all 2>/dev/null || true
-
             echo "⚙️  Installing dependencies..."
             sudo npm install --no-audit --no-fund
 
-            echo "🚀 Restarting PM2 backend..."
-            sudo pm2 delete all 2>/dev/null || true
-            sudo pm2 start "npx tsx src/server.ts" --name "timeharbor-api" --update-env
+            echo "⏹️  Killing PM2 daemon (clean slate)..."
+            sudo pm2 kill 2>/dev/null || true
+
+            echo "🚀 Starting PM2 backend..."
+            cd "$REPO_DIR"
+            sudo pm2 start src/server.ts \
+              --name "timeharbor-api" \
+              --interpreter "$REPO_DIR/node_modules/.bin/tsx" \
+              --cwd "$REPO_DIR" \
+              --update-env
             sudo pm2 save
 
             echo "✅ ${{ matrix.env }} backend deployment completed!"
@@ -79,8 +83,26 @@ jobs:
 
       - name: Verify ${{ matrix.env }} health
         run: |
-          sleep 8
-          BODY=$(curl -s ${{ secrets[matrix.health_url_secret] }})
-          echo "Response: $BODY"
-          echo "$BODY" | grep -q '"status":"ok"' || { echo "${{ matrix.env }} backend health check failed"; exit 1; }
-          echo "${{ matrix.env }} backend is healthy"
+          HEALTH_URL="${{ matrix.health_url }}"
+          HEALTH_HOST=$(echo "$HEALTH_URL" | sed 's|https\?://||' | cut -d'/' -f1)
+
+          echo "Pinging $HEALTH_HOST..."
+          ping -c 3 "$HEALTH_HOST" || echo "Ping failed (may be ICMP-blocked), continuing..."
+
+          echo "Waiting for tsx server to compile and start..."
+          for i in $(seq 1 10); do
+            sleep 10
+            HTTP_CODE=$(curl -s -o /tmp/health_body.txt -w "%{http_code}" "$HEALTH_URL")
+            BODY=$(cat /tmp/health_body.txt)
+            echo "Attempt $i — HTTP $HTTP_CODE — Body: $BODY"
+            if [ "$HTTP_CODE" = "200" ] && echo "$BODY" | grep -q '"status":"ok"'; then
+              echo "✅ ${{ matrix.env }} backend is healthy"
+              exit 0
+            fi
+            if [ "$HTTP_CODE" != "502" ] && [ "$HTTP_CODE" != "000" ]; then
+              echo "Unexpected HTTP $HTTP_CODE — server may be misconfigured"
+            fi
+            echo "Not healthy yet, retrying in 10s..."
+          done
+          echo "❌ ${{ matrix.env }} backend health check failed after 10 attempts (100s)"
+          exit 1
