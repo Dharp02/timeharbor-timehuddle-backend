@@ -65,7 +65,8 @@ jobs:
             sudo npm install --no-audit --no-fund
 
             echo "🚀 Restarting PM2 backend..."
-            sudo pm2 restart all
+            sudo pm2 delete all 2>/dev/null || true
+            sudo pm2 start "npx tsx src/server.ts" --name "timeharbor-api" --update-env
             sudo pm2 save
 
             echo "✅ ${{ matrix.env }} backend deployment completed!"

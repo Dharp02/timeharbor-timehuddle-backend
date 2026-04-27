@@ -14,6 +14,11 @@ dist/
 .DS_Store
 Thumbs.db
 
+# PM2 — local process config should not be committed
+ecosystem.config.js
+ecosystem.*.config.js
+.pm2/
+
 # IDE
 .idea/
 .vscode/
