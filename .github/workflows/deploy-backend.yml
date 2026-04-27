@@ -53,10 +53,9 @@ jobs:
             cd "$REPO_DIR"
 
 
-            echo "🔄 Fetching latest code on ${{ matrix.branch }}..."
+            echo "🔄 Pulling latest code on ${{ matrix.branch }}..."
             git fetch origin
-            git checkout ${{ matrix.branch }}
-            git reset --hard origin/${{ matrix.branch }}
+            git pull origin ${{ matrix.branch }}
 
             echo "⚙️  Installing dependencies..."
             sudo npm install --no-audit --no-fund
