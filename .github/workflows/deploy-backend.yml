@@ -83,20 +83,26 @@ jobs:
 
       - name: Verify ${{ matrix.env }} health
         run: |
-          HEALTH_HOST=$(echo "${{ matrix.health_url }}" | sed 's|https\?://||' | cut -d'/' -f1)
-          echo "Pinging $HEALTH_HOST..."
-          ping -c 3 "$HEALTH_HOST" || echo "Ping failed (may be blocked), continuing..."
+          HEALTH_URL="${{ matrix.health_url }}"
+          HEALTH_HOST=$(echo "$HEALTH_URL" | sed 's|https\?://||' | cut -d'/' -f1)
 
-          echo "Waiting for server to finish startup..."
+          echo "Pinging $HEALTH_HOST..."
+          ping -c 3 "$HEALTH_HOST" || echo "Ping failed (may be ICMP-blocked), continuing..."
+
+          echo "Waiting for tsx server to compile and start..."
           for i in $(seq 1 10); do
             sleep 10
-            BODY=$(curl -s "${{ matrix.health_url }}")
-            echo "Attempt $i — Response: $BODY"
-            if echo "$BODY" | grep -q '"status":"ok"'; then
-              echo "${{ matrix.env }} backend is healthy"
+            HTTP_CODE=$(curl -s -o /tmp/health_body.txt -w "%{http_code}" "$HEALTH_URL")
+            BODY=$(cat /tmp/health_body.txt)
+            echo "Attempt $i — HTTP $HTTP_CODE — Body: $BODY"
+            if [ "$HTTP_CODE" = "200" ] && echo "$BODY" | grep -q '"status":"ok"'; then
+              echo "✅ ${{ matrix.env }} backend is healthy"
               exit 0
             fi
-            echo "Not healthy yet, retrying..."
+            if [ "$HTTP_CODE" != "502" ] && [ "$HTTP_CODE" != "000" ]; then
+              echo "Unexpected HTTP $HTTP_CODE — server may be misconfigured"
+            fi
+            echo "Not healthy yet, retrying in 10s..."
           done
-          echo "${{ matrix.env }} backend health check failed after all retries"
+          echo "❌ ${{ matrix.env }} backend health check failed after 10 attempts (100s)"
           exit 1
