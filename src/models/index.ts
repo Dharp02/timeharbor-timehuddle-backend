@@ -5,6 +5,7 @@ import type { Ticket } from "./ticket.model.js";
 import type { ClockEvent } from "./clock.model.js";
 import type { Message } from "./message.model.js";
 import type { Notification } from "./notification.model.js";
+import type { PushToken } from "./push-token.model.js";
 import type { Profile } from "./profile.model.js";
 import type { EncryptedOpLogBatch } from "./encrypted-oplog.model.js";
 import type { RecoveryKeyStatus } from "./recovery-key-status.model.js";
@@ -37,6 +38,11 @@ export function messagesCollection() {
 // Notifications
 export function notificationsCollection() {
   return getDB().collection<Notification>("notifications");
+}
+
+// Push subscription tokens (web push + native APNs/FCM)
+export function pushTokensCollection() {
+  return getDB().collection<PushToken>("push_tokens");
 }
 
 // Profiles

@@ -1,4 +1,4 @@
-name: Deploy Timeharbor Backend
+name: Deploy Timehuddle Backend
 
 on:
   push:
@@ -7,22 +7,22 @@ on:
 
 jobs:
   deploy:
-    name: Deploy Timeharbor Backend - ${{ matrix.env }}
+    name: Deploy Timehuddle Backend - ${{ matrix.env }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         include:
           - env: DEV
-            host_secret: DEV_BACKEND_HOST
-            port: 2047
+            host_secret: TIMECORE_DEV_HOST
+            port: 2063
             branch: main
-            health_url: https://timehubbackenddev.os.mieweb.org/health
+            health_url_secret: TIMECORE_DEV_HEALTH_URL
           - env: PROD
-            host_secret: PROD_BACKEND_HOST
-            port: 2030
+            host_secret: TIMECORE_PROD_HOST
+            port: 2065
             branch: main
-            health_url: https://timehubbackend.os.mieweb.org/health
+            health_url_secret: TIMECORE_PROD_HEALTH_URL
 
     steps:
       - name: Setup SSH
@@ -61,11 +61,11 @@ jobs:
 
             echo "🔄 Restarting PM2 backend..."
             cd "$REPO_DIR"
-            if sudo pm2 describe timeharbor-backend > /dev/null 2>&1; then
-              sudo pm2 restart timeharbor-backend --update-env
+            if sudo pm2 describe timecore-backend > /dev/null 2>&1; then
+              sudo pm2 restart timecore-backend --update-env
             else
               sudo pm2 start src/server.ts \
-                --name "timeharbor-backend" \
+                --name "timecore-backend" \
                 --interpreter "$REPO_DIR/node_modules/.bin/tsx" \
                 --cwd "$REPO_DIR" \
                 --update-env
@@ -82,7 +82,7 @@ jobs:
 
       - name: Verify ${{ matrix.env }} health
         run: |
-          HEALTH_URL="${{ matrix.health_url }}"
+          HEALTH_URL="${{ secrets[matrix.health_url_secret] }}"
           HEALTH_HOST=$(echo "$HEALTH_URL" | sed 's|https\?://||' | cut -d'/' -f1)
 
           echo "Pinging $HEALTH_HOST..."
