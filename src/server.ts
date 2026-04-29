@@ -64,7 +64,7 @@ export async function buildApp(opts: { logger?: boolean } = {}): Promise<Fastify
   });
 
   // Capacitor native WebViews use these non-routable origins — always allowed.
-  const CAPACITOR_ORIGINS = ["capacitor://localhost", "ionic://localhost", "http://localhost"];
+  const CAPACITOR_ORIGINS = ["capacitor://localhost", "ionic://localhost", "http://localhost", "https://localhost"];
   const envOrigins = process.env.TRUSTED_ORIGINS
     ? process.env.TRUSTED_ORIGINS.split(",").map((o) => o.trim())
     : [];
