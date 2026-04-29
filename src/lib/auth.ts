@@ -1,4 +1,5 @@
 import { betterAuth } from "better-auth";
+import { bearer } from "better-auth/plugins";
 import { mongodbAdapter } from "better-auth/adapters/mongodb";
 import { client } from "./db.js";
 import { sendEmail } from "./email.js";
@@ -27,6 +28,8 @@ export const auth = betterAuth({
 
   secret: process.env.BETTER_AUTH_SECRET!,
 
+  plugins: [bearer()],
+
   // Static baseURL — must always be the FRONTEND domain so that:
   //   1. OAuth redirect_uri points to the frontend (cookies stay same-origin)
   //   2. State cookies set during sign-in are on the same domain as the callback
@@ -40,6 +43,7 @@ export const auth = betterAuth({
     "capacitor://localhost",
     "ionic://localhost",
     "http://localhost",
+    "https://localhost",
   ],
 
   session: {
