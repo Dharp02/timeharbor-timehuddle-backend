@@ -61,11 +61,11 @@ jobs:
 
             echo "🔄 Restarting PM2 backend..."
             cd "$REPO_DIR"
-            if sudo pm2 describe timecore-backend > /dev/null 2>&1; then
-              sudo pm2 restart timecore-backend --update-env
+            if sudo pm2 describe timehuddle-api > /dev/null 2>&1; then
+              sudo pm2 restart timehuddle-api --update-env
             else
               sudo pm2 start src/server.ts \
-                --name "timecore-backend" \
+                --name "timehuddle-api" \
                 --interpreter "$REPO_DIR/node_modules/.bin/tsx" \
                 --cwd "$REPO_DIR" \
                 --update-env
