@@ -56,6 +56,15 @@ export async function buildApp(opts: { logger?: boolean } = {}): Promise<Fastify
         },
         { name: "TimeHarbor", description: "TimeHarbor profile, encrypted op-log sync, and recovery key endpoints" },
       ],
+      components: {
+        securitySchemes: {
+          cookieAuth: {
+            type: "apiKey",
+            in: "cookie",
+            name: "better-auth.session_token",
+          },
+        },
+      },
     },
   });
 
