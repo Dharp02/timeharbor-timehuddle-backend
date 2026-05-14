@@ -20,6 +20,7 @@ import { clockRoutes } from "./routes/clock.js";
 import { messageRoutes } from "./routes/messages.js";
 import { notificationRoutes } from "./routes/notifications.js";
 import { timeharborRoutes } from "./routes/timeharbor.js";
+import { timehudleConnectionRoutes } from "./routes/timehuddle-connection.js";
 
 export async function buildApp(opts: { logger?: boolean } = {}): Promise<FastifyInstance> {
   const app = Fastify({ logger: opts.logger ?? true });
@@ -55,6 +56,7 @@ export async function buildApp(opts: { logger?: boolean } = {}): Promise<Fastify
           description: "User notification inbox, mark-read, delete, and SSE stream",
         },
         { name: "TimeHarbor", description: "TimeHarbor profile, encrypted op-log sync, and recovery key endpoints" },
+        { name: "TimeHuddle", description: "TimeHuddle account connection endpoints" },
       ],
     },
   });
@@ -396,6 +398,7 @@ export async function buildApp(opts: { logger?: boolean } = {}): Promise<Fastify
   await app.register(clockRoutes, { prefix: "/v1" });
   await app.register(messageRoutes, { prefix: "/v1" });
   await app.register(notificationRoutes, { prefix: "/v1" });
+  await app.register(timehudleConnectionRoutes, { prefix: "/v1" });
   await app.register(timeharborRoutes, { prefix: "/api/timeharbor" });
 
   return app;

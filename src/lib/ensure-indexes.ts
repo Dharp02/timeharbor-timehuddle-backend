@@ -11,5 +11,9 @@ export async function ensureIndexes() {
   await encryptedOpLogs.createIndex({ userId: 1, hlc: 1 });
   await encryptedOpLogs.createIndex({ userId: 1, deviceId: 1, hlc: 1 });
 
+  // TimeHuddle connections — one connection per TimeHarbor user
+  const timehudleConnections = db.collection("timehuddle_connections");
+  await timehudleConnections.createIndex({ userId: 1 }, { unique: true });
+
   console.log("MongoDB indexes ensured");
 }

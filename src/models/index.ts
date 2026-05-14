@@ -8,6 +8,7 @@ import type { Notification } from "./notification.model.js";
 import type { Profile } from "./profile.model.js";
 import type { EncryptedOpLogBatch } from "./encrypted-oplog.model.js";
 import type { RecoveryKeyStatus } from "./recovery-key-status.model.js";
+import type { TimehudleConnection } from "./timehuddle-connection.model.js";
 
 // Collection accessor — better-auth's MongoDB adapter uses "user" (singular)
 export function usersCollection() {
@@ -52,4 +53,9 @@ export function encryptedOpLogsCollection() {
 // Recovery key status
 export function recoveryKeyStatusCollection() {
   return getDB().collection<RecoveryKeyStatus>("recoveryKeyStatus");
+}
+
+// TimeHuddle connections
+export function timehudleConnectionsCollection() {
+  return getDB().collection<TimehudleConnection>("timehuddle_connections");
 }
