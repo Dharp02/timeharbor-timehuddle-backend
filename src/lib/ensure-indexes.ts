@@ -11,6 +11,10 @@ export async function ensureIndexes() {
   await encryptedOpLogs.createIndex({ userId: 1, hlc: 1 });
   await encryptedOpLogs.createIndex({ userId: 1, deviceId: 1, hlc: 1 });
 
+  // TimeHuddle connections — one connection per TimeHarbor user
+  const timehudleConnections = db.collection("timehuddle_connections");
+  await timehudleConnections.createIndex({ userId: 1 }, { unique: true });
+
   // Push subscription tokens — looked up by userId when sending notifications
   const pushTokens = db.collection("push_tokens");
   await pushTokens.createIndex({ userId: 1 });

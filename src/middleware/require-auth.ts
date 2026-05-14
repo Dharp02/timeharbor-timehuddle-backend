@@ -29,12 +29,20 @@ export async function requireAuth(req: FastifyRequest, reply: FastifyReply) {
     headers: fromNodeHeaders(req.headers),
   });
 
-  if (!session) {
-    return reply.status(401).send({ error: "Unauthorized" });
+  if (session) {
+    req.user = session.user;
+    req.session = session.session;
+    return;
   }
 
-  req.user = session.user;
-  req.session = session.session;
+  // Fall back to UUID-based identity (X-Identity-UUID header sent by apiFetch)
+  const uuid = (req.headers["x-identity-uuid"] as string | undefined)?.trim();
+  if (uuid && /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(uuid)) {
+    req.user = buildAppUser(req);
+    return;
+  }
+
+  return reply.status(401).send({ error: "Unauthorized" });
 }
 
 // Extend Fastify types globally
