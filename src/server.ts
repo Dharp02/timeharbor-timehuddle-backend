@@ -58,6 +58,15 @@ export async function buildApp(opts: { logger?: boolean } = {}): Promise<Fastify
         { name: "TimeHarbor", description: "TimeHarbor profile, encrypted op-log sync, and recovery key endpoints" },
         { name: "TimeHuddle", description: "TimeHuddle account connection endpoints" },
       ],
+      components: {
+        securitySchemes: {
+          cookieAuth: {
+            type: "apiKey",
+            in: "cookie",
+            name: "better-auth.session_token",
+          },
+        },
+      },
     },
   });
 
@@ -65,8 +74,15 @@ export async function buildApp(opts: { logger?: boolean } = {}): Promise<Fastify
     routePrefix: "/docs",
   });
 
+  // Capacitor native WebViews use these non-routable origins — always allowed.
+  const CAPACITOR_ORIGINS = ["capacitor://localhost", "ionic://localhost", "http://localhost", "https://localhost"];
+  const envOrigins = process.env.TRUSTED_ORIGINS
+    ? process.env.TRUSTED_ORIGINS.split(",").map((o) => o.trim())
+    : [];
+  const allowedOrigins = [...new Set([...envOrigins, ...CAPACITOR_ORIGINS])];
+
   await app.register(cors, {
-    origin: process.env.TRUSTED_ORIGINS ? process.env.TRUSTED_ORIGINS.split(",") : [],
+    origin: allowedOrigins,
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   });

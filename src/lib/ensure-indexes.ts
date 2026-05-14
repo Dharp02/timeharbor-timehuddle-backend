@@ -15,5 +15,11 @@ export async function ensureIndexes() {
   const timehudleConnections = db.collection("timehuddle_connections");
   await timehudleConnections.createIndex({ userId: 1 }, { unique: true });
 
+  // Push subscription tokens — looked up by userId when sending notifications
+  const pushTokens = db.collection("push_tokens");
+  await pushTokens.createIndex({ userId: 1 });
+  // Prevent duplicate native token registrations
+  await pushTokens.createIndex({ userId: 1, type: 1, token: 1 }, { sparse: true });
+
   console.log("MongoDB indexes ensured");
 }
