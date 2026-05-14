@@ -23,7 +23,7 @@ import { timeharborRoutes } from "./routes/timeharbor.js";
 import { timehudleConnectionRoutes } from "./routes/timehuddle-connection.js";
 
 export async function buildApp(opts: { logger?: boolean } = {}): Promise<FastifyInstance> {
-  const app = Fastify({ logger: opts.logger ?? true });
+  const app = Fastify({ logger: opts.logger ?? true, ignoreTrailingSlash: true });
 
   // Swagger — must be registered before routes
   await app.register(swagger, {
