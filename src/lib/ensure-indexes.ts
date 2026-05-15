@@ -21,5 +21,10 @@ export async function ensureIndexes() {
   // Prevent duplicate native token registrations
   await pushTokens.createIndex({ userId: 1, type: 1, token: 1 }, { sparse: true });
 
+  // OAuth states — auto-expire after 15 minutes (TTL index on createdAt)
+  const oauthStates = db.collection("timehuddle_oauth_states");
+  await oauthStates.createIndex({ state: 1 }, { unique: true });
+  await oauthStates.createIndex({ createdAt: 1 }, { expireAfterSeconds: 900 });
+
   console.log("MongoDB indexes ensured");
 }
