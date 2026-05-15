@@ -1,5 +1,9 @@
 import { ObjectId } from "mongodb";
-import { timehudleConnectionsCollection, oauthStatesCollection } from "../models/index.js";
+import {
+  timehudleConnectionsCollection,
+  oauthStatesCollection,
+  timehudleLinkedTeamsCollection,
+} from "../models/index.js";
 import { randomBytes, createHash } from "crypto";
 
 const TIMEHUDDLE_API_URL =
@@ -217,6 +221,39 @@ export const timehudleConnectionService = {
 
   async disconnect(userId: string) {
     const result = await timehudleConnectionsCollection().deleteOne({ userId });
+    return result.deletedCount === 1;
+  },
+
+  // ── Proxy helper ────────────────────────────────────────────────────────────
+
+  /** Make an authenticated GET to the TimeHuddle API on behalf of userId. */
+  async proxyGet<T = unknown>(userId: string, path: string): Promise<T> {
+    const token = await timehudleConnectionService.getAccessToken(userId);
+    const res = await fetch(`${TIMEHUDDLE_API_URL}${path}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) throw new Error(`TimeHuddle proxy GET ${path} failed: ${res.status}`);
+    return res.json() as Promise<T>;
+  },
+
+  // ── Linked-team management ──────────────────────────────────────────────────
+
+  async getLinkedTeams(userId: string) {
+    return timehudleLinkedTeamsCollection()
+      .find({ userId }, { projection: { _id: 0, userId: 0 } })
+      .toArray();
+  },
+
+  async linkTeam(userId: string, teamId: string, teamName: string) {
+    await timehudleLinkedTeamsCollection().updateOne(
+      { userId, teamId },
+      { $set: { userId, teamId, teamName, linkedAt: new Date() }, $setOnInsert: { _id: new ObjectId() } },
+      { upsert: true }
+    );
+  },
+
+  async unlinkTeam(userId: string, teamId: string) {
+    const result = await timehudleLinkedTeamsCollection().deleteOne({ userId, teamId });
     return result.deletedCount === 1;
   },
 };
