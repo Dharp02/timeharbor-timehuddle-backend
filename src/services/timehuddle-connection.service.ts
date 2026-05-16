@@ -236,6 +236,18 @@ export const timehudleConnectionService = {
     return res.json() as Promise<T>;
   },
 
+  /** Make an authenticated PATCH to the TimeHuddle API on behalf of userId. */
+  async proxyPatch<T = unknown>(userId: string, path: string, body: unknown): Promise<T> {
+    const token = await timehudleConnectionService.getAccessToken(userId);
+    const res = await fetch(`${TIMEHUDDLE_API_URL}${path}`, {
+      method: "PATCH",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) throw new Error(`TimeHuddle proxy PATCH ${path} failed: ${res.status}`);
+    return res.json() as Promise<T>;
+  },
+
   // ── Linked-team management ──────────────────────────────────────────────────
 
   async getLinkedTeams(userId: string) {

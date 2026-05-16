@@ -356,4 +356,52 @@ export async function timehudleConnectionRoutes(app: FastifyInstance) {
       return reply.send({ tickets: data.tickets ?? [] });
     }
   );
+
+  // POST /v1/timehuddle/tickets/:id/push — push time/status/description/github back to TimeHuddle
+  app.post(
+    "/timehuddle/tickets/:id/push",
+    {
+      preHandler: [requireAuth],
+      schema: {
+        tags: ["TimeHuddle"],
+        summary: "Push tracked time and status for a ticket back to TimeHuddle",
+        params: {
+          type: "object",
+          required: ["id"],
+          properties: { id: { type: "string", pattern: "^[0-9a-f]{24}$" } },
+        },
+        body: {
+          type: "object",
+          additionalProperties: false,
+          properties: {
+            addMs: { type: "number", minimum: 0 },
+            status: { type: "string" },
+            description: { type: "string" },
+            github: { type: "string" },
+          },
+        },
+        response: {
+          200: { type: "object", properties: { ticket: { type: "object", additionalProperties: true } } },
+          400: { type: "object", properties: { error: { type: "string" } } },
+          403: { type: "object", properties: { error: { type: "string" } } },
+          404: { type: "object", properties: { error: { type: "string" } } },
+        },
+      },
+    },
+    async (req, reply) => {
+      const { id } = req.params as { id: string };
+      const body = req.body as {
+        addMs?: number;
+        status?: string;
+        description?: string;
+        github?: string;
+      };
+      const data = await timehudleConnectionService.proxyPatch<{ ticket: any }>(
+        req.user!.id,
+        `/v1/tickets/${id}/external-update`,
+        body
+      );
+      return reply.send(data);
+    }
+  );
 }
