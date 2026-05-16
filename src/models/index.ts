@@ -9,7 +9,7 @@ import type { PushToken } from "./push-token.model.js";
 import type { Profile } from "./profile.model.js";
 import type { EncryptedOpLogBatch } from "./encrypted-oplog.model.js";
 import type { RecoveryKeyStatus } from "./recovery-key-status.model.js";
-import type { TimehudleConnection, OAuthState } from "./timehuddle-connection.model.js";
+import type { TimehudleConnection, OAuthState, TimehudleLinkedTeam } from "./timehuddle-connection.model.js";
 
 // Collection accessor — better-auth's MongoDB adapter uses "user" (singular)
 export function usersCollection() {
@@ -70,4 +70,9 @@ export function timehudleConnectionsCollection() {
 // A TTL index on createdAt should be created at server startup (15-minute expiry).
 export function oauthStatesCollection() {
   return getDB().collection<OAuthState>("timehuddle_oauth_states");
+}
+
+// Teams the user has chosen to link from TimeHuddle into TimeHarbor.
+export function timehudleLinkedTeamsCollection() {
+  return getDB().collection<TimehudleLinkedTeam>("timehuddle_linked_teams");
 }

@@ -23,3 +23,12 @@ export interface OAuthState {
   codeVerifier: string; // PKCE code_verifier
   createdAt: Date;      // TTL index field — expires after 15 min
 }
+
+/** A TimeHuddle team the user has opted in to import into TimeHarbor. */
+export interface TimehudleLinkedTeam {
+  _id: ObjectId;
+  userId: string;   // TimeHarbor user ID
+  teamId: string;   // TimeHuddle team ID (hex ObjectId)
+  teamName: string;
+  linkedAt: Date;
+}

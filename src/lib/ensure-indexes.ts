@@ -26,5 +26,10 @@ export async function ensureIndexes() {
   await oauthStates.createIndex({ state: 1 }, { unique: true });
   await oauthStates.createIndex({ createdAt: 1 }, { expireAfterSeconds: 900 });
 
+  // Linked teams — one record per (userId, teamId) pair
+  const linkedTeams = db.collection("timehuddle_linked_teams");
+  await linkedTeams.createIndex({ userId: 1, teamId: 1 }, { unique: true });
+  await linkedTeams.createIndex({ userId: 1 });
+
   console.log("MongoDB indexes ensured");
 }

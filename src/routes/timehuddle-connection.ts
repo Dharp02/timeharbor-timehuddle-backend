@@ -149,4 +149,259 @@ export async function timehudleConnectionRoutes(app: FastifyInstance) {
       return { success: true };
     }
   );
+
+  // ── Team linking ─────────────────────────────────────────────────────────────
+
+  // GET /v1/timehuddle/teams — proxy all teams the user belongs to in TimeHuddle
+  app.get(
+    "/timehuddle/teams",
+    {
+      preHandler: [requireAuth],
+      schema: {
+        tags: ["TimeHuddle"],
+        summary: "List teams the user belongs to in TimeHuddle",
+        security: [{ cookieAuth: [] }],
+        response: {
+          200: {
+            type: "object",
+            properties: {
+              teams: {
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: {
+                    id: { type: "string" },
+                    name: { type: "string" },
+                    description: { type: "string", nullable: true },
+                    memberCount: { type: "number" },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+    async (req, reply) => {
+      const data = await timehudleConnectionService.proxyGet<{ teams: any[] }>(
+        req.user!.id,
+        "/v1/teams"
+      );
+      const teams = (data.teams ?? []).map((t: any) => ({
+        id: t.id,
+        name: t.name,
+        description: t.description ?? null,
+        memberCount: (t.members?.length ?? 0) + (t.admins?.length ?? 0),
+      }));
+      return reply.send({ teams });
+    }
+  );
+
+  // GET /v1/timehuddle/linked-teams — teams the user has opted in to sync
+  app.get(
+    "/timehuddle/linked-teams",
+    {
+      preHandler: [requireAuth],
+      schema: {
+        tags: ["TimeHuddle"],
+        summary: "List TimeHuddle teams linked to this TimeHarbor account",
+        security: [{ cookieAuth: [] }],
+        response: {
+          200: {
+            type: "object",
+            properties: {
+              linkedTeams: {
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: {
+                    teamId: { type: "string" },
+                    teamName: { type: "string" },
+                    linkedAt: { type: "string", format: "date-time" },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+    async (req) => {
+      const linkedTeams = await timehudleConnectionService.getLinkedTeams(req.user!.id);
+      return { linkedTeams };
+    }
+  );
+
+  // POST /v1/timehuddle/linked-teams — link a team
+  app.post(
+    "/timehuddle/linked-teams",
+    {
+      preHandler: [requireAuth],
+      schema: {
+        tags: ["TimeHuddle"],
+        summary: "Link a TimeHuddle team to sync tickets from",
+        security: [{ cookieAuth: [] }],
+        body: {
+          type: "object",
+          required: ["teamId", "teamName"],
+          additionalProperties: false,
+          properties: {
+            teamId: { type: "string" },
+            teamName: { type: "string" },
+          },
+        },
+        response: {
+          200: { type: "object", properties: { success: { type: "boolean" } } },
+        },
+      },
+    },
+    async (req, reply) => {
+      const { teamId, teamName } = req.body as { teamId: string; teamName: string };
+      await timehudleConnectionService.linkTeam(req.user!.id, teamId, teamName);
+      return reply.send({ success: true });
+    }
+  );
+
+  // DELETE /v1/timehuddle/linked-teams/:teamId — unlink a team
+  app.delete(
+    "/timehuddle/linked-teams/:teamId",
+    {
+      preHandler: [requireAuth],
+      schema: {
+        tags: ["TimeHuddle"],
+        summary: "Unlink a TimeHuddle team (stops ticket sync; marks existing tickets disconnected)",
+        security: [{ cookieAuth: [] }],
+        params: {
+          type: "object",
+          required: ["teamId"],
+          properties: { teamId: { type: "string" } },
+        },
+        response: {
+          200: { type: "object", properties: { success: { type: "boolean" } } },
+        },
+      },
+    },
+    async (req, reply) => {
+      const { teamId } = req.params as { teamId: string };
+      await timehudleConnectionService.unlinkTeam(req.user!.id, teamId);
+      return reply.send({ success: true });
+    }
+  );
+
+  // GET /v1/timehuddle/linked-teams/:teamId/tickets — proxy tickets for a linked team
+  app.get(
+    "/timehuddle/linked-teams/:teamId/tickets",
+    {
+      preHandler: [requireAuth],
+      schema: {
+        tags: ["TimeHuddle"],
+        summary: "Fetch tickets for a linked TimeHuddle team",
+        security: [{ cookieAuth: [] }],
+        params: {
+          type: "object",
+          required: ["teamId"],
+          properties: { teamId: { type: "string" } },
+        },
+        response: {
+          200: {
+            type: "object",
+            properties: {
+              tickets: { type: "array", items: { type: "object", additionalProperties: true } },
+            },
+          },
+          403: { type: "object", properties: { error: { type: "string" } } },
+        },
+      },
+    },
+    async (req, reply) => {
+      const { teamId } = req.params as { teamId: string };
+      // Verify team is actually linked by this user
+      const linked = await timehudleConnectionService.getLinkedTeams(req.user!.id);
+      if (!linked.some((t) => t.teamId === teamId)) {
+        return reply.status(403).send({ error: "Team not linked" });
+      }
+      const data = await timehudleConnectionService.proxyGet<{ tickets: any[] }>(
+        req.user!.id,
+        `/v1/tickets?teamId=${encodeURIComponent(teamId)}`
+      );
+      return reply.send({ tickets: data.tickets ?? [] });
+    }
+  );
+
+  // GET /v1/timehuddle/shared-tickets — all tickets flagged sharedWithTimeharbor=true across all user's TimeHuddle teams
+  // No team-linking required — works for any team the user belongs to in TimeHuddle.
+  app.get(
+    "/timehuddle/shared-tickets",
+    {
+      preHandler: [requireAuth],
+      schema: {
+        tags: ["TimeHuddle"],
+        summary: "Fetch all TimeHuddle tickets flagged as shared with TimeHarbor (any team)",
+        security: [{ cookieAuth: [] }],
+        response: {
+          200: {
+            type: "object",
+            properties: {
+              tickets: { type: "array", items: { type: "object", additionalProperties: true } },
+            },
+          },
+        },
+      },
+    },
+    async (req, reply) => {
+      const data = await timehudleConnectionService.proxyGet<{ tickets: any[] }>(
+        req.user!.id,
+        "/v1/tickets/shared-with-timeharbor"
+      );
+      return reply.send({ tickets: data.tickets ?? [] });
+    }
+  );
+
+  // POST /v1/timehuddle/tickets/:id/push — push time/status/description/github back to TimeHuddle
+  app.post(
+    "/timehuddle/tickets/:id/push",
+    {
+      preHandler: [requireAuth],
+      schema: {
+        tags: ["TimeHuddle"],
+        summary: "Push tracked time and status for a ticket back to TimeHuddle",
+        params: {
+          type: "object",
+          required: ["id"],
+          properties: { id: { type: "string", pattern: "^[0-9a-f]{24}$" } },
+        },
+        body: {
+          type: "object",
+          additionalProperties: false,
+          properties: {
+            addMs: { type: "number", minimum: 0 },
+            status: { type: "string" },
+            description: { type: "string" },
+            github: { type: "string" },
+          },
+        },
+        response: {
+          200: { type: "object", properties: { ticket: { type: "object", additionalProperties: true } } },
+          400: { type: "object", properties: { error: { type: "string" } } },
+          403: { type: "object", properties: { error: { type: "string" } } },
+          404: { type: "object", properties: { error: { type: "string" } } },
+        },
+      },
+    },
+    async (req, reply) => {
+      const { id } = req.params as { id: string };
+      const body = req.body as {
+        addMs?: number;
+        status?: string;
+        description?: string;
+        github?: string;
+      };
+      const data = await timehudleConnectionService.proxyPatch<{ ticket: any }>(
+        req.user!.id,
+        `/v1/tickets/${id}/external-update`,
+        body
+      );
+      return reply.send(data);
+    }
+  );
 }
